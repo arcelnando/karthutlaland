@@ -1,24 +1,18 @@
 /* =========================================
-   GLOBAL & TYPOGRAPHY
+   GLOBAL
 ========================================= */
 :root {
   --bg: #09090b;
-  --surface: #121214;
-  --surface-hover: #18181b;
+  --surface: rgba(18, 18, 20, 0.85);
+  --surface-solid: #121214;
   --text-main: #ededed;
   --text-muted: #a1a1aa;
   --text-dim: #52525b;
   --accent: #ef4444;
-  --accent-glow: rgba(239, 68, 68, 0.15);
   --border: #27272a;
 }
 
-* { 
-  box-sizing: border-box; 
-  margin: 0; 
-  padding: 0; 
-  -webkit-tap-highlight-color: transparent;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 body {
   background: var(--bg);
@@ -29,8 +23,8 @@ body {
 }
 
 .app, .landing {
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  width: 100vw;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
@@ -38,185 +32,163 @@ body {
 }
 
 /* =========================================
-   LANDING PAGE (Ultra Clean)
+   LANDING PAGE
 ========================================= */
-.landing { 
-  justify-content: center; 
-  align-items: center; 
-  padding: 24px; 
-}
-.landing-content { 
-  max-width: 360px; 
-  width: 100%; 
-  animation: fadeIn 0.6s ease-out; 
-}
+.landing { display: flex; justify-content: center; align-items: center; padding: 24px; }
+.landing-content { max-width: 360px; width: 100%; animation: fadeIn 0.6s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.landing h1 { 
-  color: #fff; 
-  font-size: 36px; 
-  font-weight: 700; 
-  letter-spacing: -1.5px; 
-  margin-bottom: 16px; 
-}
-.landing p { 
-  color: var(--text-muted); 
-  font-size: 15px; 
-  line-height: 1.6; 
-  margin-bottom: 40px; 
-  letter-spacing: -0.2px;
-}
+.landing h1 { color: #fff; font-size: 36px; font-weight: 700; letter-spacing: -1.5px; margin-bottom: 16px; }
+.landing p { color: var(--text-muted); font-size: 15px; line-height: 1.6; margin-bottom: 40px; letter-spacing: -0.2px; }
 .start-btn {
-  display: flex; 
-  align-items: center; 
-  justify-content: space-between; 
-  width: 100%;
-  background: var(--text-main); 
-  color: var(--bg); 
-  border: none; 
-  padding: 16px 20px;
-  border-radius: 12px; 
-  font-size: 15px; 
-  font-weight: 600; 
-  cursor: pointer; 
-  transition: transform 0.2s, opacity 0.2s;
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  background: var(--text-main); color: var(--bg); border: none; padding: 16px 20px;
+  border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.2s;
 }
-.start-btn:active { transform: scale(0.98); opacity: 0.8; }
+.start-btn:active { transform: scale(0.98); }
 
 /* =========================================
-   HEADER (Judul & Search Kiri-Kanan)
+   FULL MAP
 ========================================= */
-.header {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: calc(16px + env(safe-area-inset-top)) 16px 16px 16px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-  z-index: 1000;
-}
-
-.brand { 
-  color: var(--text-main); 
-  font-size: 18px; 
-  font-weight: 700; 
-  letter-spacing: -0.5px;
-  cursor: pointer;
-}
-
-.icon-btn {
-  background: transparent; 
-  border: none; 
-  color: var(--text-main);
-  width: 36px; height: 36px; 
-  display: grid; place-items: center; 
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-.icon-btn:active { opacity: 0.6; }
-
-.search-form {
-  display: flex; 
-  align-items: center; 
-  gap: 10px;
-  width: 100%;
-}
-.search-form svg { color: var(--text-muted); }
-.search-form input { 
-  background: transparent; 
-  border: none; 
-  color: var(--text-main); 
-  font-size: 15px; 
-  outline: none; 
-  flex: 1; 
-}
-.search-form input::placeholder { color: var(--text-dim); }
-.icon-btn-close { 
-  background: transparent; 
-  border: none; 
-  color: var(--text-muted); 
-  cursor: pointer;
-  padding: 4px;
-}
-.loader { font-size: 12px; color: var(--text-muted); }
-
-/* =========================================
-   MAP AREA
-========================================= */
-.map-container {
-  flex: 1;
-  position: relative;
-  width: 100%;
-  background: var(--bg);
-}
-
 .map { width: 100%; height: 100%; background: var(--bg); z-index: 1; }
 .leaflet-container { background: var(--bg); }
 .leaflet-control-attribution { display: none; }
 
 /* =========================================
-   FOOTER (Status Titik Api)
+   CUSTOM FIRE MARKER & ZONA MERAH
 ========================================= */
-.footer {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px calc(16px + env(safe-area-inset-bottom)) 16px 16px;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
-  z-index: 1000;
+.custom-fire-icon { background: transparent; border: none; }
+
+.fire-marker {
+  position: relative;
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
 }
 
-.status {
-  display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;
+.fire-zone {
+  position: absolute;
+  width: 40px; height: 40px;
+  background: rgba(239, 68, 68, 0.15);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+  animation: pulseZone 2s ease-in-out infinite;
 }
-.dot { 
-  width: 6px; height: 6px; border-radius: 50%; background: var(--accent); 
-  box-shadow: 0 0 0 3px var(--accent-glow); 
+@keyframes pulseZone {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.6; }
 }
-.muted { color: var(--text-muted); }
 
-.stat-suhu {
-  display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500;
+.fire-svg {
+  position: relative;
+  width: 18px; height: 18px;
+  z-index: 2;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.8));
+}
+
+/* Cluster styling */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: rgba(239, 68, 68, 0.2) !important; }
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+  background-color: var(--surface-solid) !important; color: var(--text-main) !important;
+  font-family: inherit !important; font-weight: 600 !important; border: 1px solid var(--accent) !important;
 }
 
 /* =========================================
-   FLOATING CONTROLS (Zoom & Panel)
+   FLOATING UI (HEADER & FOOTER)
 ========================================= */
-.zoom {
-  position: absolute; right: 16px; bottom: 24px; z-index: 1000;
-  display: flex; flex-direction: column; background: var(--surface); border-radius: 100px;
-  border: 1px solid var(--border); overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+.floating-header {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 16px; right: 16px;
+  z-index: 1000;
+  pointer-events: none;
 }
-.zoom button { width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: none; color: var(--text-main); cursor: pointer; }
-.zoom button:active { background: var(--surface-hover); }
-.zoom-sep { height: 1px; background: var(--border); margin: 0 10px; }
 
-.panel {
-  position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 1000;
-  background: var(--surface); border-radius: 20px; padding: 20px;
+.brand-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.brand {
+  color: var(--text-main); 
+  font-size: 20px; 
+  font-weight: 700; 
+  letter-spacing: -0.5px;
+  cursor: pointer;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+.search-btn {
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-main);
+  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+
+.search-form {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 100px; padding: 0 16px; height: 44px;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  pointer-events: auto;
+  animation: expandSearch 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes expandSearch { from { width: 44px; opacity: 0; } to { width: 100%; opacity: 1; } }
+.search-form svg { color: var(--text-muted); }
+.search-form input { background: transparent; border: none; color: var(--text-main); font-size: 15px; outline: none; flex: 1; }
+.search-form input::placeholder { color: var(--text-dim); }
+.close-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
+
+.floating-footer {
+  position: absolute;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 16px;
+  z-index: 1000;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 8px 16px; border-radius: 100px;
+  font-size: 13px; font-weight: 600; color: var(--text-main);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2); }
+.divider { color: var(--border); font-weight: 400; }
+.muted { color: var(--text-muted); font-weight: 400; }
+
+/* =========================================
+   FLOATING PANEL (DETAIL TITIK)
+========================================= */
+.floating-panel {
+  position: absolute;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 16px; right: 16px;
+  z-index: 1000;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 20px;
   display: flex; flex-direction: column; gap: 16px;
-  border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 .panel-head { display: flex; align-items: center; justify-content: space-between; }
-.panel-title { font-size: 14px; font-weight: 600; color: var(--text-main); }
+.panel-title { font-size: 14px; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; text-transform: uppercase; }
 .close { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
 .row { display: flex; align-items: center; gap: 12px; font-size: 14px; }
 .row svg { color: var(--text-dim); flex-shrink: 0; }
 .row .label { color: var(--text-muted); font-weight: 400; }
-.row .value { margin-left: auto; color: var(--text-main); font-weight: 500; font-variant-numeric: tabular-nums; }
+.row .value { margin-left: auto; color: var(--text-main); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* =========================================
-   CLUSTER & MARKER STYLING
+   ZOOM CONTROL
 ========================================= */
-.leaflet-marker-icon { filter: hue-rotate(140deg) saturate(3) brightness(0.8); }
-.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: rgba(239, 68, 68, 0.2) !important; }
-.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-  background-color: #121214 !important; color: #ededed !important;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif !important; font-weight: 600 !important; border: 1px solid #27272a !important;
+.zoom {
+  position: absolute; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 1000;
+  display: flex; flex-direction: column; background: var(--surface); border-radius: 100px;
+  border: 1px solid var(--border); overflow: hidden; 
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
+.zoom button { width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: none; color: var(--text-main); cursor: pointer; }
+.zoom button:active { background: rgba(255,255,255,0.1); }
+.zoom-sep { height: 1px; background: var(--border); margin: 0 10px; }

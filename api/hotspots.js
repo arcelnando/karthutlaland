@@ -4,8 +4,8 @@ export const revalidate = 0;
 export default async function handler(req, res) {
   const MAP_KEY = process.env.FIRMS_MAP_KEY;
   const BBOX = "95,-11,141,6"; 
-  const DAYS = "2"; // 2 hari biar aman kalau hari ini kosong
-  const SOURCE = "VIIRS_NOAA21_NRT"; // Ganti ke NOAA-21
+  const DAYS = "1"; // Real-time 24 jam
+  const SOURCE = "VIIRS_NOAA21_NRT"; // Satelit aktif
 
   if (!MAP_KEY) return res.status(500).json({ error: "FIRMS_MAP_KEY belum di-set" });
 
