@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
@@ -39,7 +39,7 @@ const IconClose = ({ size = 16 }) => (
   </svg>
 );
 
-// --- Kontrol zoom custom (SVG, bukan bawaan Leaflet) ---
+// --- Kontrol zoom custom ---
 function ZoomControl() {
   const map = useMap();
   return (
@@ -64,6 +64,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
+
+  // Ambil API Key Carto dari environment Vercel
+  const cartoKey = import.meta.env.VITE_CARTO_KEY;
 
   useEffect(() => {
     fetch("/api/fires")
@@ -147,7 +150,10 @@ function App() {
         zoomControl={false}
         attributionControl={false}
       >
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+        {/* URL Tile pakai API key dari env */}
+        <TileLayer
+          url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key=${cartoKey}`}
+        />
 
         {fires.map((fire, i) => (
           <CircleMarker
