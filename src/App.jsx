@@ -13,8 +13,7 @@ const IconClose = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0
 const IconSearch = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>);
 const IconArrowRight = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>);
 
-// --- CUSTOM SVG MARKER (Ikon Api + Zona Merah) ---
-// Pakai L.divIcon bawaan leaflet, ga perlu install apa-apa
+// --- CUSTOM SVG MARKER ---
 const createFireIcon = () => {
   const svgHtml = `
     <div class="fire-marker">
@@ -32,7 +31,6 @@ const createFireIcon = () => {
     iconAnchor: [16, 16],
   });
 };
-
 const fireIcon = createFireIcon();
 
 function ZoomControl() {
@@ -63,12 +61,17 @@ export default function App() {
   const [mapCenter, setMapCenter] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   
+  // State buat filter hari
+  const [days, setDays] = useState("1");
+  
   const searchInputRef = useRef(null);
   const cartoKey = import.meta.env.VITE_CARTO_KEY;
 
+  // Fetch data setiap kali 'days' berubah
   useEffect(() => {
+    setLoading(true);
     const timestamp = new Date().getTime();
-    fetch(`/api/hotspots?t=${timestamp}`)
+    fetch(`/api/hotspots?days=${days}&t=${timestamp}`)
       .then((res) => res.text())
       .then((csv) => {
         const lines = csv.replace(/\r/g, "").trim().split("\n");
@@ -87,7 +90,7 @@ export default function App() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [days]);
 
   useEffect(() => { if (isSearching && searchInputRef.current) searchInputRef.current.focus(); }, [isSearching]);
 
@@ -113,22 +116,18 @@ export default function App() {
     return { avg: avg.toFixed(1) };
   }, [fires]);
 
-  // --- LANDING PAGE ---
   if (!isStarted) {
     return (
       <div className="landing">
         <div className="landing-content">
           <h1>Karthutlaland</h1>
-          <p>Sistem pemantauan titik panas dan deforestasi hutan Indonesia berbasis data satelit NASA FIRMS. Pantau anomali suhu secara near-real-time.</p>
-          <button className="start-btn" onClick={() => setIsStarted(true)}>
-            Mulai Pantau <IconArrowRight />
-          </button>
+          <p>Sistem pemantauan anomali api dan deforestasi hutan Indonesia berbasis data satelit NASA FIRMS.</p>
+          <button className="start-btn" onClick={() => setIsStarted(true)}>Mulai Pantau <IconArrowRight /></button>
         </div>
       </div>
     );
   }
 
-  // --- MAIN APP (FULL MAP) ---
   return (
     <div className="app">
       <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
@@ -137,51 +136,49 @@ export default function App() {
         
         <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
           {fires.map((fire, i) => (
-            <Marker 
-              key={i} 
-              position={[fire.lat, fire.lon]} 
-              icon={fireIcon}
-              eventHandlers={{ click: () => setSelected(i) }} 
-            />
+            <Marker key={i} position={[fire.lat, fire.lon]} icon={fireIcon} eventHandlers={{ click: () => setSelected(i) }} />
           ))}
         </MarkerClusterGroup>
         
         <ZoomControl />
       </MapContainer>
 
-      {/* FLOATING HEADER */}
+      {/* FLOATING HEADER (Judul & Search) */}
       <div className="floating-header">
         {!isSearching ? (
           <div className="brand-wrap">
             <h1 className="brand" onClick={() => setIsStarted(false)}>Karthutlaland</h1>
-            <button className="search-btn" onClick={() => setIsSearching(true)}>
-              <IconSearch />
-            </button>
+            <button className="search-btn" onClick={() => setIsSearching(true)}><IconSearch /></button>
           </div>
         ) : (
           <form onSubmit={handleSearch} className="search-form">
             <IconSearch size={16} />
-            <input 
-              ref={searchInputRef}
-              type="text" 
-              placeholder="Cari wilayah..." 
-              value={search} 
-              onChange={(e) => setSearch(e.target.value)} 
-            />
+            <input ref={searchInputRef} type="text" placeholder="Cari wilayah..." value={search} onChange={(e) => setSearch(e.target.value)} />
             {searchLoading ? <span className="loader">...</span> : (
-              <button type="button" className="close-btn" onClick={() => setIsSearching(false)}>
-                <IconClose size={14} />
-              </button>
+              <button type="button" className="close-btn" onClick={() => setIsSearching(false)}><IconClose size={14} /></button>
             )}
           </form>
         )}
       </div>
 
+      {/* FLOATING TIME FILTER (Kanan Atas, di bawah search) */}
+      <div className="time-filter">
+        {["1", "2", "3", "5"].map((d) => (
+          <button 
+            key={d} 
+            className={`time-btn ${days === d ? "active" : ""}`}
+            onClick={() => setDays(d)}
+          >
+            {d}H
+          </button>
+        ))}
+      </div>
+
       {/* FLOATING FOOTER (Status) */}
       {!selected && (
         <div className="floating-footer">
-          {loading ? <span className="muted">Memuat satelit...</span> : fires.length === 0 ? (
-            <span className="muted">Tidak ada hotspot (24 jam)</span>
+          {loading ? <span className="muted">Memuat data...</span> : fires.length === 0 ? (
+            <span className="muted">Tidak ada anomali api</span>
           ) : (
             <>
               <span className="dot" />
@@ -197,7 +194,7 @@ export default function App() {
       {selected !== null && fires[selected] && (
         <div className="floating-panel">
           <div className="panel-head">
-            <span className="panel-title">Detail Hotspot</span>
+            <span className="panel-title">Detail Anomali Api</span>
             <button className="close" onClick={() => setSelected(null)}><IconClose size={16} /></button>
           </div>
           <div className="row"><IconTarget /><span className="label">Koordinat</span><span className="value">{fires[selected].lat.toFixed(3)}, {fires[selected].lon.toFixed(3)}</span></div>

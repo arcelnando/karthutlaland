@@ -4,12 +4,14 @@ export const revalidate = 0;
 export default async function handler(req, res) {
   const MAP_KEY = process.env.FIRMS_MAP_KEY;
   const BBOX = "95,-11,141,6"; 
-  const DAYS = "1"; // Real-time 24 jam
-  const SOURCE = "VIIRS_NOAA21_NRT"; // Satelit aktif
+  const SOURCE = "VIIRS_NOAA21_NRT";
+
+  // Ambil parameter ?days= dari frontend. Default: 1 hari
+  const days = req.query.days || "1";
 
   if (!MAP_KEY) return res.status(500).json({ error: "FIRMS_MAP_KEY belum di-set" });
 
-  const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/${SOURCE}/${BBOX}/${DAYS}`;
+  const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/${SOURCE}/${BBOX}/${days}`;
 
   try {
     const response = await fetch(url, { cache: 'no-store' });
