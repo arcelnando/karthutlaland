@@ -18,6 +18,7 @@ const IconAir = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0
 const IconMenu = ({ size = 20 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>);
 const IconRadar = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
 const IconChart = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>);
+const IconSmoke = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 14a4 4 0 1 1 7-2.6A4 4 0 0 1 18 14v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3Z"/><path d="M9 18v3M15 18v3"/></svg>);
 const IconLocate = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
 const IconMoon = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>);
 const IconTree = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 22v-5"/><path d="M9 7l3-5 3 5"/><path d="M10 12l2-5 2 5"/><path d="M7 17a5 5 0 0 1 0-10h.5"/><path d="M17 17a5 5 0 0 0 0-10h-.5"/></svg>);
@@ -136,7 +137,7 @@ export default function App() {
   const [days, setDays] = useState("1");
   
   const [highConfOnly, setHighConfOnly] = useState(false);
-  // showSmokeLayer default TRUE biar asap langsung keliatan
+  const [showSmokeLayer, setShowSmokeLayer] = useState(false); // Balik ke false
   const [nightMode, setNightMode] = useState(false);
   const [showForest, setShowForest] = useState(false);
   const [mapZoom, setMapZoom] = useState(5);
@@ -146,7 +147,7 @@ export default function App() {
 
   const handleStart = () => {
     setIsLoadingMap(true);
-    setTimeout(() => { setIsStarted(true); setIsLoadingMap(false); }, 2500); 
+    setTimeout(() => { setIsStarted(true); setIsLoadingMap(false); }, 2000); 
   };
 
   const handleLocate = () => {
@@ -273,15 +274,16 @@ export default function App() {
     <div className="app">
       <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
         
-        {/* LANDING PAGE: Citra Satelit | SETELAH START: Citra Satelit (biar asap keliatan) */}
-        {!isStarted ? (
-          <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" />
-        ) : (
-          <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.9} />
-        )}
+        {/* PETA DASAR: Selalu Dark Mode */}
+        <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
         
+        {/* LAYER TAMBAHAN: Cuma muncul kalau di-toggle */}
         {showForest && isStarted && (
           <TileLayer url="https://tiles.globalforestwatch.org/tree_cover_loss/v1.11/default/{z}/{x}/{y}.png" opacity={0.6} />
+        )}
+
+        {showSmokeLayer && isStarted && (
+          <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.6} />
         )}
 
         <MapController center={mapCenter} zoom={mapZoom} />
@@ -363,6 +365,9 @@ export default function App() {
               </button>
               <button className="menu-item" onClick={() => setShowForest(!showForest)}>
                 <IconTree size={16} /> {showForest ? "Sembunyikan Deforestasi" : "Lihat Deforestasi"}
+              </button>
+              <button className="menu-item" onClick={() => setShowSmokeLayer(!showSmokeLayer)}>
+                <IconSmoke size={16} /> {showSmokeLayer ? "Sembunyikan Asap" : "Lihat Citra Asap"}
               </button>
               
               <div className="menu-divider"></div>
