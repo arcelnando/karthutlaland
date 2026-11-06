@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
-// --- SVG icons (inline, unik, tanpa library) ---
+// --- SVG icons ---
 const IconFlame = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 2c1.2 3.2 3.6 4.8 3.6 8.2A3.6 3.6 0 0 1 12 13.8a3.6 3.6 0 0 1-3.6-3.6C8.4 6.8 10.8 5.2 12 2Z" />
@@ -39,7 +39,7 @@ const IconClose = ({ size = 16 }) => (
   </svg>
 );
 
-// --- Kontrol zoom custom ---
+// --- Zoom Control ---
 function ZoomControl() {
   const map = useMap();
   return (
@@ -65,8 +65,8 @@ function App() {
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
 
-  // Ambil API Key Carto dari environment Vercel
-  const cartoKey = import.meta.env.VITE_CARTO_KEY;
+  // Ambil key dari env Vercel
+  const cartoKey = import.meta.env.VITE_CARTO_KEY || "MASUKKAN_KEY_CARTO_KAMU_DISINI";
 
   useEffect(() => {
     fetch("/api/fires")
@@ -150,9 +150,9 @@ function App() {
         zoomControl={false}
         attributionControl={false}
       >
-        {/* URL Tile pakai API key dari env */}
+        {/* Perhatikan parameternya: ?key= (bukan ?api_key=) */}
         <TileLayer
-          url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key=${cartoKey}`}
+          url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`}
         />
 
         {fires.map((fire, i) => (
