@@ -1,6 +1,3 @@
-/* =========================================
-   GLOBAL
-========================================= */
 :root {
   --bg: #09090b;
   --surface: rgba(18, 18, 20, 0.85);
@@ -31,13 +28,10 @@ body {
   background: var(--bg);
 }
 
-/* =========================================
-   LANDING PAGE
-========================================= */
+/* --- LANDING PAGE --- */
 .landing { display: flex; justify-content: center; align-items: center; padding: 24px; }
 .landing-content { max-width: 360px; width: 100%; animation: fadeIn 0.6s ease-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
 .landing h1 { color: #fff; font-size: 36px; font-weight: 700; letter-spacing: -1.5px; margin-bottom: 16px; }
 .landing p { color: var(--text-muted); font-size: 15px; line-height: 1.6; margin-bottom: 40px; letter-spacing: -0.2px; }
 .start-btn {
@@ -47,21 +41,14 @@ body {
 }
 .start-btn:active { transform: scale(0.98); }
 
-/* =========================================
-   FULL MAP
-========================================= */
+/* --- MAP --- */
 .map { width: 100%; height: 100%; background: var(--bg); z-index: 1; }
 .leaflet-container { background: var(--bg); }
 .leaflet-control-attribution { display: none; }
 
-/* =========================================
-   CUSTOM FIRE MARKER (Murni SVG)
-========================================= */
+/* --- CUSTOM FIRE MARKER --- */
 .custom-fire-icon { background: transparent; border: none; }
-.custom-fire-icon svg {
-  width: 100%; height: 100%;
-  filter: drop-shadow(0 0 2px rgba(0,0,0,0.8)); /* Shadow tipis biar kebaca di peta, bukan glow */
-}
+.custom-fire-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(0,0,0,0.8)); }
 
 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: rgba(239, 68, 68, 0.2) !important; }
 .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
@@ -69,29 +56,18 @@ body {
   font-family: inherit !important; font-weight: 600 !important; border: 1px solid var(--accent) !important;
 }
 
-/* =========================================
-   FLOATING UI
-========================================= */
+/* --- FLOATING HEADER & UI --- */
 .floating-header {
-  position: absolute;
-  top: calc(16px + env(safe-area-inset-top));
-  left: 16px; right: 16px;
-  z-index: 1000;
-  pointer-events: none;
+  position: absolute; top: calc(16px + env(safe-area-inset-top));
+  left: 16px; right: 16px; z-index: 1000; pointer-events: none;
 }
-
 .brand-wrap { display: flex; justify-content: space-between; align-items: center; pointer-events: auto; }
-.brand {
-  color: var(--text-main); font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
-  cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-}
-
+.brand { color: var(--text-main); font-size: 20px; font-weight: 700; letter-spacing: -0.5px; cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
 .search-btn {
   background: var(--surface); border: 1px solid var(--border); color: var(--text-main);
   width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
-
 .search-form {
   display: flex; align-items: center; gap: 10px;
   background: var(--surface); border: 1px solid var(--border);
@@ -105,40 +81,32 @@ body {
 .search-form input::placeholder { color: var(--text-dim); }
 .close-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
 
-/* --- TIME FILTER --- */
 .time-filter {
-  position: absolute;
-  top: calc(70px + env(safe-area-inset-top));
-  left: 16px; z-index: 1000;
-  display: flex; gap: 6px;
+  position: absolute; top: calc(70px + env(safe-area-inset-top));
+  left: 16px; z-index: 1000; display: flex; gap: 6px;
 }
 .time-btn {
   background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
   padding: 6px 12px; border-radius: 100px; font-size: 12px; font-weight: 600;
-  cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  transition: all 0.2s;
+  cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: all 0.2s;
 }
 .time-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 .floating-footer {
-  position: absolute;
-  bottom: calc(16px + env(safe-area-inset-bottom));
-  left: 16px; z-index: 1000;
+  position: absolute; bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; z-index: 1000;
   display: flex; align-items: center; gap: 10px;
   background: var(--surface); border: 1px solid var(--border);
   padding: 8px 16px; border-radius: 100px;
   font-size: 13px; font-weight: 600; color: var(--text-main);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  pointer-events: none;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); pointer-events: none;
 }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .divider { color: var(--border); font-weight: 400; }
 .muted { color: var(--text-muted); font-weight: 400; }
 
-/* --- FLOATING PANEL (DETAIL) --- */
+/* --- FLOATING PANEL --- */
 .floating-panel {
-  position: absolute;
-  bottom: calc(16px + env(safe-area-inset-bottom));
+  position: absolute; bottom: calc(16px + env(safe-area-inset-bottom));
   left: 16px; right: 16px; z-index: 1000;
   background: var(--surface); border: 1px solid var(--border);
   border-radius: 20px; padding: 20px;
@@ -148,7 +116,6 @@ body {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
 .panel-head { display: flex; align-items: center; justify-content: space-between; }
 .panel-title { font-size: 14px; font-weight: 700; color: var(--text-main); letter-spacing: 0.5px; text-transform: uppercase; }
 .close { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
@@ -161,9 +128,11 @@ body {
 .zoom {
   position: absolute; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 1000;
   display: flex; flex-direction: column; background: var(--surface); border-radius: 100px;
-  border: 1px solid var(--border); overflow: hidden; 
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border); overflow: hidden; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
 .zoom button { width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: none; color: var(--text-main); cursor: pointer; }
 .zoom button:active { background: rgba(255,255,255,0.1); }
 .zoom-sep { height: 1px; background: var(--border); margin: 0 10px; }
+
+/* Sembunyiin teks bawaan leaflet-velocity */
+.leaflet-control-velocity { display: none !important; }

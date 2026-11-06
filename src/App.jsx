@@ -1,8 +1,10 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, forwardRef } from "react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet-velocity/dist/leaflet-velocity.css";
+import "leaflet-velocity/dist/leaflet-velocity.js";
 import "./App.css";
 
 // --- SVG Icons ---
@@ -13,23 +15,39 @@ const IconClose = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0
 const IconSearch = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>);
 const IconArrowRight = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>);
 const IconWind = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" /></svg>);
+const IconAir = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
 
-// --- CUSTOM SVG MARKER (Murni SVG Api, Tanpa Glow) ---
+// --- CUSTOM SVG MARKER (Murni SVG Api) ---
 const createFireIcon = () => {
-  const svgHtml = `
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2c1.2 3.2 3.6 4.8 3.6 8.2A3.6 3.6 0 0 1 12 13.8a3.6 3.6 0 0 1-3.6-3.6C8.4 6.8 10.8 5.2 12 2Z" />
-      <path d="M12 13.8c-2.4 1.4-3.6 3.4-3.6 5.6A3.6 3.6 0 0 0 12 23a3.6 3.6 0 0 0 3.6-3.6c0-2.2-1.2-4.2-3.6-5.6Z" />
-    </svg>
-  `;
-  return L.divIcon({
-    html: svgHtml,
-    className: "custom-fire-icon",
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  });
+  const svgHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1.2 3.2 3.6 4.8 3.6 8.2A3.6 3.6 0 0 1 12 13.8a3.6 3.6 0 0 1-3.6-3.6C8.4 6.8 10.8 5.2 12 2Z" /><path d="M12 13.8c-2.4 1.4-3.6 3.4-3.6 5.6A3.6 3.6 0 0 0 12 23a3.6 3.6 0 0 0 3.6-3.6c0-2.2-1.2-4.2-3.6-5.6Z" /></svg>`;
+  return L.divIcon({ html: svgHtml, className: "custom-fire-icon", iconSize: [20, 20], iconAnchor: [10, 10] });
 };
 const fireIcon = createFireIcon();
+
+// --- WINDY LAYER ---
+const WindyLayer = forwardRef((props, ref) => {
+  const map = useMap();
+  useEffect(() => {
+    let velocityLayer;
+    fetch("https://onaci.github.io/leaflet-velocity/wind-global.json")
+      .then((res) => res.json())
+      .then((data) => {
+        velocityLayer = L.velocityLayer({
+          displayValues: false,
+          data: data,
+          maxVelocity: 10,
+          velocityScale: 0.005,
+          colorScale: ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e"],
+          opacity: 0.8,
+        });
+        map.addLayer(velocityLayer);
+      })
+      .catch((err) => console.error("Gagal load angin:", err));
+
+    return () => { if (velocityLayer) map.removeLayer(velocityLayer); };
+  }, [map]);
+  return null;
+});
 
 function ZoomControl() {
   const map = useMap();
@@ -53,14 +71,12 @@ export default function App() {
   const [fires, setFires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [windInfo, setWindInfo] = useState(null);
-  const [windLoading, setWindLoading] = useState(false);
+  const [envInfo, setEnvInfo] = useState(null);
   
   const [isSearching, setIsSearching] = useState(false);
   const [search, setSearch] = useState("");
   const [mapCenter, setMapCenter] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
-  
   const [days, setDays] = useState("1");
   
   const searchInputRef = useRef(null);
@@ -110,21 +126,51 @@ export default function App() {
 
   const handleMapClick = async (e) => {
     const { lat, lng } = e.latlng;
-    setWindLoading(true);
-    setSelected(null); // Tutup panel api
+    setSelected(null);
+    setEnvInfo(null); 
+
     try {
-      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=wind_speed_10m,wind_direction_10m`);
-      const data = await res.json();
-      setWindInfo({
+      const [weatherRes, airRes] = await Promise.all([
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m`),
+        fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&current=pm2_5`)
+      ]);
+
+      const weatherData = await weatherRes.json();
+      const airData = await airRes.json();
+
+      const getWeatherDesc = (code) => {
+        if (code === 0) return "Cerah";
+        if (code <= 3) return "Berawan";
+        if (code <= 48) return "Berkabut";
+        if (code <= 67) return "Hujan";
+        if (code <= 77) return "Salju";
+        if (code <= 82) return "Hujan Lebat";
+        return "Badai";
+      };
+
+      const getAqiStatus = (pm) => {
+        if (pm <= 12) return { label: "Baik", color: "#22c55e" };
+        if (pm <= 35.4) return { label: "Sedang", color: "#eab308" };
+        if (pm <= 55.4) return { label: "Tidak Sehat", color: "#f97316" };
+        return { label: "Berbahaya", color: "#ef4444" };
+      };
+
+      const pm25 = airData.current?.pm2_5 || 0;
+      const aqi = getAqiStatus(pm25);
+
+      setEnvInfo({
         lat: lat.toFixed(3),
         lng: lng.toFixed(3),
-        speed: data.current.wind_speed_10m,
-        direction: data.current.wind_direction_10m,
+        speed: weatherData.current.wind_speed_10m,
+        direction: weatherData.current.wind_direction_10m,
+        temp: weatherData.current.temperature_2m,
+        weather: getWeatherDesc(weatherData.current.weather_code),
+        pm25: pm25,
+        aqiLabel: aqi.label,
+        aqiColor: aqi.color
       });
     } catch (err) {
-      console.error(err);
-    } finally {
-      setWindLoading(false);
+      console.error("Gagal ambil data:", err);
     }
   };
 
@@ -139,7 +185,7 @@ export default function App() {
       <div className="landing">
         <div className="landing-content">
           <h1>Karthutlaland</h1>
-          <p>Sistem pemantauan anomali api dan deforestasi hutan Indonesia berbasis data satelit NASA FIRMS.</p>
+          <p>Sistem pemantauan anomali api, deforestasi, cuaca, dan kualitas udara Indonesia</p>
           <button className="start-btn" onClick={() => setIsStarted(true)}>Mulai Pantau <IconArrowRight /></button>
         </div>
       </div>
@@ -148,31 +194,15 @@ export default function App() {
 
   return (
     <div className="app">
-      <MapContainer 
-        center={[-2, 118]} 
-        zoom={5} 
-        className="map" 
-        zoomControl={false} 
-        attributionControl={false}
-        eventHandlers={{ click: handleMapClick }}
-      >
+      <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false} eventHandlers={{ click: handleMapClick }}>
         <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
         <MapController center={mapCenter} />
         
+        <WindyLayer />
+        
         <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
           {fires.map((fire, i) => (
-            <Marker 
-              key={i} 
-              position={[fire.lat, fire.lon]} 
-              icon={fireIcon} 
-              eventHandlers={{ 
-                click: (e) => {
-                  L.DomEvent.stopPropagation(e); // Biar ga munculin angin
-                  setWindInfo(null);
-                  setSelected(i);
-                } 
-              }} 
-            />
+            <Marker key={i} position={[fire.lat, fire.lon]} icon={fireIcon} eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setEnvInfo(null); setSelected(i); } }} />
           ))}
         </MarkerClusterGroup>
         
@@ -190,9 +220,7 @@ export default function App() {
           <form onSubmit={handleSearch} className="search-form">
             <IconSearch size={16} />
             <input ref={searchInputRef} type="text" placeholder="Cari wilayah..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            {searchLoading ? <span className="loader">...</span> : (
-              <button type="button" className="close-btn" onClick={() => setIsSearching(false)}><IconClose size={14} /></button>
-            )}
+            {searchLoading ? <span className="loader">...</span> : <button type="button" className="close-btn" onClick={() => setIsSearching(false)}><IconClose size={14} /></button>}
           </form>
         )}
       </div>
@@ -205,31 +233,40 @@ export default function App() {
       </div>
 
       {/* FLOATING FOOTER */}
-      {!selected && !windInfo && (
+      {!selected && !envInfo && (
         <div className="floating-footer">
           {loading ? <span className="muted">Memuat data...</span> : fires.length === 0 ? (
             <span className="muted">Tidak ada anomali api</span>
           ) : (
-            <>
-              <span className="dot" />
-              <span>{fires.length.toLocaleString('id-ID')} Titik</span>
-              {stats && <span className="divider">|</span>}
-              {stats && <span className="suhu">{stats.avg} K</span>}
-            </>
+            <><span className="dot" /><span>{fires.length.toLocaleString('id-ID')} Titik</span>{stats && <span className="divider">|</span>}{stats && <span className="suhu">{stats.avg} K</span>}</>
           )}
         </div>
       )}
 
-      {/* PANEL ANGIN */}
-      {windInfo && (
+      {/* PANEL LINGKUNGAN (CUACA, POLUSI, ANGIN) */}
+      {envInfo && (
         <div className="floating-panel">
           <div className="panel-head">
-            <span className="panel-title">Info Angin</span>
-            <button className="close" onClick={() => setWindInfo(null)}><IconClose size={16} /></button>
+            <span className="panel-title">Info Lingkungan</span>
+            <button className="close" onClick={() => setEnvInfo(null)}><IconClose size={16} /></button>
           </div>
-          <div className="row"><IconTarget /><span className="label">Koordinat</span><span className="value">{windInfo.lat}, {windInfo.lng}</span></div>
-          <div className="row"><IconWind /><span className="label">Kecepatan</span><span className="value">{windInfo.speed} km/j</span></div>
-          <div className="row"><IconClock /><span className="label">Arah</span><span className="value">{windInfo.direction}°</span></div>
+          <div className="row">
+            <IconThermo />
+            <span className="label">Cuaca</span>
+            <span className="value">{envInfo.temp}°C · {envInfo.weather}</span>
+          </div>
+          <div className="row">
+            <IconAir />
+            <span className="label">PM2.5</span>
+            <span className="value" style={{ color: envInfo.aqiColor }}>
+              {envInfo.pm25} μg/m³ ({envInfo.aqiLabel})
+            </span>
+          </div>
+          <div className="row">
+            <IconWind />
+            <span className="label">Angin</span>
+            <span className="value">{envInfo.speed} km/j · {envInfo.direction}°</span>
+          </div>
         </div>
       )}
 
