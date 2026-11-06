@@ -17,7 +17,7 @@ const IconArrowRight = ({ size = 18 }) => (<svg width={size} height={size} viewB
 const IconWind = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" /></svg>);
 const IconAir = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
 
-// --- CUSTOM SVG MARKER (Murni SVG Api) ---
+// --- CUSTOM SVG MARKER ---
 const createFireIcon = () => {
   const svgHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1.2 3.2 3.6 4.8 3.6 8.2A3.6 3.6 0 0 1 12 13.8a3.6 3.6 0 0 1-3.6-3.6C8.4 6.8 10.8 5.2 12 2Z" /><path d="M12 13.8c-2.4 1.4-3.6 3.4-3.6 5.6A3.6 3.6 0 0 0 12 23a3.6 3.6 0 0 0 3.6-3.6c0-2.2-1.2-4.2-3.6-5.6Z" /></svg>`;
   return L.divIcon({ html: svgHtml, className: "custom-fire-icon", iconSize: [20, 20], iconAnchor: [10, 10] });
@@ -72,6 +72,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [envInfo, setEnvInfo] = useState(null);
+  const [debugError, setDebugError] = useState(null); // STATE BUAT DEBUG
   
   const [isSearching, setIsSearching] = useState(false);
   const [search, setSearch] = useState("");
@@ -128,12 +129,17 @@ export default function App() {
     const { lat, lng } = e.latlng;
     setSelected(null);
     setEnvInfo(null); 
+    setDebugError(null); 
 
     try {
       const [weatherRes, airRes] = await Promise.all([
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m`),
         fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&current=pm2_5`)
       ]);
+
+      if (!weatherRes.ok || !airRes.ok) {
+        throw new Error(`API Error. Cuaca: ${weatherRes.status}, Udara: ${airRes.status}`);
+      }
 
       const weatherData = await weatherRes.json();
       const airData = await airRes.json();
@@ -170,7 +176,7 @@ export default function App() {
         aqiColor: aqi.color
       });
     } catch (err) {
-      console.error("Gagal ambil data:", err);
+      setDebugError(err.message); // TANGKEP ERROR BUAT DITAMPILIN
     }
   };
 
@@ -185,7 +191,7 @@ export default function App() {
       <div className="landing">
         <div className="landing-content">
           <h1>Karthutlaland</h1>
-          <p>Sistem pemantauan anomali api, deforestasi, cuaca, dan kualitas udara Indonesia</p>
+          <p>Sistem pemantauan anomali api, deforestasi, cuaca, dan kualitas udara Indonesia berbasis satelit dan model global.</p>
           <button className="start-btn" onClick={() => setIsStarted(true)}>Mulai Pantau <IconArrowRight /></button>
         </div>
       </div>
@@ -208,6 +214,13 @@ export default function App() {
         
         <ZoomControl />
       </MapContainer>
+
+      {/* KOTAK DEBUG (Muncul kalau API error) */}
+      {debugError && (
+        <div style={{ position: 'absolute', top: 100, left: 16, right: 16, zIndex: 2000, background: '#300', color: '#ff8888', padding: '12px', fontSize: '12px', borderRadius: '8px', border: '1px solid #f00' }}>
+          <b>Error:</b> {debugError}
+        </div>
+      )}
 
       {/* FLOATING HEADER */}
       <div className="floating-header">
@@ -243,30 +256,16 @@ export default function App() {
         </div>
       )}
 
-      {/* PANEL LINGKUNGAN (CUACA, POLUSI, ANGIN) */}
+      {/* PANEL LINGKUNGAN */}
       {envInfo && (
         <div className="floating-panel">
           <div className="panel-head">
             <span className="panel-title">Info Lingkungan</span>
             <button className="close" onClick={() => setEnvInfo(null)}><IconClose size={16} /></button>
           </div>
-          <div className="row">
-            <IconThermo />
-            <span className="label">Cuaca</span>
-            <span className="value">{envInfo.temp}°C · {envInfo.weather}</span>
-          </div>
-          <div className="row">
-            <IconAir />
-            <span className="label">PM2.5</span>
-            <span className="value" style={{ color: envInfo.aqiColor }}>
-              {envInfo.pm25} μg/m³ ({envInfo.aqiLabel})
-            </span>
-          </div>
-          <div className="row">
-            <IconWind />
-            <span className="label">Angin</span>
-            <span className="value">{envInfo.speed} km/j · {envInfo.direction}°</span>
-          </div>
+          <div className="row"><IconThermo /><span className="label">Cuaca</span><span className="value">{envInfo.temp}°C · {envInfo.weather}</span></div>
+          <div className="row"><IconAir /><span className="label">PM2.5</span><span className="value" style={{ color: envInfo.aqiColor }}>{envInfo.pm25} μg/m³ ({envInfo.aqiLabel})</span></div>
+          <div className="row"><IconWind /><span className="label">Angin</span><span className="value">{envInfo.speed} km/j · {envInfo.direction}°</span></div>
         </div>
       )}
 
