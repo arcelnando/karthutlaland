@@ -19,13 +19,17 @@ const IconMenu = ({ size = 20 }) => (<svg width={size} height={size} viewBox="0 
 const IconRadar = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
 const IconChart = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>);
 const IconSmoke = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 14a4 4 0 1 1 7-2.6A4 4 0 0 1 18 14v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3Z"/><path d="M9 18v3M15 18v3"/></svg>);
+const IconLocate = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
 
-// --- CUSTOM SVG MARKER ---
-const createFireIcon = () => {
-  const svgHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1.2 3.2 3.6 4.8 3.6 8.2A3.6 3.6 0 0 1 12 13.8a3.6 3.6 0 0 1-3.6-3.6C8.4 6.8 10.8 5.2 12 2Z" /><path d="M12 13.8c-2.4 1.4-3.6 3.4-3.6 5.6A3.6 3.6 0 0 0 12 23a3.6 3.6 0 0 0 3.6-3.6c0-2.2-1.2-4.2-3.6-5.6Z" /></svg>`;
+// --- CUSTOM SVG MARKER BERDASARKAN CONFIDENCE ---
+const createFireIcon = (confidence) => {
+  let color = "#ef4444"; // Default High (Merah)
+  if (confidence === "low" || confidence === "l") color = "#22c55e"; // Hijau
+  else if (confidence === "nominal" || confidence === "n") color = "#eab308"; // Kuning
+
+  const svgHtml = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1.2 3.2 3.6 4.8 3.6 8.2A3.6 3.6 0 0 1 12 13.8a3.6 3.6 0 0 1-3.6-3.6C8.4 6.8 10.8 5.2 12 2Z" /><path d="M12 13.8c-2.4 1.4-3.6 3.4-3.6 5.6A3.6 3.6 0 0 0 12 23a3.6 3.6 0 0 0 3.6-3.6c0-2.2-1.2-4.2-3.6-5.6Z" /></svg>`;
   return L.divIcon({ html: svgHtml, className: "custom-fire-icon", iconSize: [20, 20], iconAnchor: [10, 10] });
 };
-const fireIcon = createFireIcon();
 
 // --- WINDY LAYER ---
 const WindyLayer = forwardRef((props, ref) => {
@@ -57,9 +61,9 @@ function ZoomControl() {
   );
 }
 
-function MapController({ center }) {
+function MapController({ center, zoom }) {
   const map = useMap();
-  useEffect(() => { if (center) map.flyTo(center, 9, { duration: 1.5 }); }, [center, map]);
+  useEffect(() => { if (center) map.flyTo(center, zoom || 9, { duration: 1.5 }); }, [center, zoom, map]);
   return null;
 }
 
@@ -73,45 +77,43 @@ function MapCenterTracker({ onChange }) {
   return null;
 }
 
-// --- KOMPONEN GRAFIK SVG SEDERHANA ---
+// --- KOMPONEN GRAFIK SVG ---
 const TrendChart = ({ data }) => {
   if (!data || data.length === 0) return null;
-  
   const maxVal = Math.max(...data.map(d => d.count), 1);
-  const width = 260; // Lebar grafik
-  const height = 60; // Tinggi grafik
-  const barWidth = width / data.length - 4;
+  const width = 260; const height = 60; const barWidth = width / data.length - 4;
 
   return (
     <div className="trend-chart">
-      <div className="chart-header">
-        <IconChart size={14} /> Tren 7 Hari
-      </div>
+      <div className="chart-header"><IconChart size={14} /> Tren 7 Hari</div>
       <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
         {data.map((d, i) => {
           const barHeight = (d.count / maxVal) * height;
           const x = i * (width / data.length) + 2;
           const y = height - barHeight;
-          return (
-            <g key={i}>
-              <rect x={x} y={y} width={barWidth} height={barHeight} fill="var(--accent)" rx="2" />
-            </g>
-          );
+          return <rect key={i} x={x} y={y} width={barWidth} height={barHeight} fill="var(--accent)" rx="2" />;
         })}
       </svg>
-      <div className="chart-labels">
-        {data.map((d, i) => (
-          <span key={i}>{d.label}</span>
-        ))}
-      </div>
+      <div className="chart-labels">{data.map((d, i) => <span key={i}>{d.label}</span>)}</div>
     </div>
   );
 };
 
+// --- LOADING SCREEN ---
+const LoadingScreen = () => (
+  <div className="loading-screen">
+    <div className="loading-radar">
+      <div className="radar-sweep"></div>
+    </div>
+    <p>Memuat Data Satelit...</p>
+  </div>
+);
+
 export default function App() {
   const [isStarted, setIsStarted] = useState(false);
+  const [isLoadingMap, setIsLoadingMap] = useState(false); // State Loading
   const [fires, setFires] = useState([]);
-  const [chartData, setChartData] = useState([]); // Data grafik
+  const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [envInfo, setEnvInfo] = useState(null);
@@ -125,33 +127,51 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [days, setDays] = useState("1");
   
-  // State Fitur Baru
-  const [highConfOnly, setHighConfOnly] = useState(false); // Filter Confidence
-  const [showSmokeLayer, setShowSmokeLayer] = useState(false); // Layer Asap
+  const [highConfOnly, setHighConfOnly] = useState(false);
+  const [showSmokeLayer, setShowSmokeLayer] = useState(false);
+  const [mapZoom, setMapZoom] = useState(5); // Zoom level state
 
   const searchInputRef = useRef(null);
   const cartoKey = import.meta.env.VITE_CARTO_KEY;
 
-  // Fungsi narik data untuk grafik (7 hari)
+  // Handle klik Mulai Pantau
+  const handleStart = () => {
+    setIsLoadingMap(true);
+    setTimeout(() => {
+      setIsStarted(true);
+      setIsLoadingMap(false);
+    }, 2000); // Loading 2 detik
+  };
+
+  // Fungsi Lokasi Saya
+  const handleLocate = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+          setMapZoom(12);
+        },
+        () => alert("Gagal mendeteksi lokasi. Pastikan GPS aktif.")
+      );
+    }
+  };
+
+  // Fungsi narik data grafik
   useEffect(() => {
+    if (!isStarted) return;
     fetch("https://firms.modaps.eosdis.nasa.gov/api/area/csv/" + import.meta.env.VITE_FIRMS_MAP_KEY + "/VIIRS_NOAA21_NRT/95,-11,141,6/7")
       .then(res => res.text())
       .then(csv => {
-         // Logika parsing data 7 hari (sederhana)
          const lines = csv.trim().split('\n');
          const counts = {};
          for (let i=1; i<lines.length; i++) {
              const date = lines[i].split(',')[5];
              counts[date] = (counts[date] || 0) + 1;
          }
-         // Ambil 7 hari terakhir
-         const last7 = Object.keys(counts).sort().slice(-7).map(date => ({
-             label: date.slice(5), // Format MM-DD
-             count: counts[date]
-         }));
+         const last7 = Object.keys(counts).sort().slice(-7).map(date => ({ label: date.slice(5), count: counts[date] }));
          setChartData(last7);
       }).catch(console.error);
-  }, []);
+  }, [isStarted]);
 
   const fetchEnvironment = async (lat, lng) => {
     setEnvLoading(true); setEnvInfo(null); setSelected(null); setMenuOpen(false);
@@ -176,6 +196,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!isStarted) return;
     setLoading(true);
     const ts = new Date().getTime();
     fetch(`/api/hotspots?days=${days}&t=${ts}`)
@@ -188,7 +209,7 @@ export default function App() {
           if (cols.length >= 10 && cols[0] !== "latitude") {
             const lat = parseFloat(cols[0]);
             const lon = parseFloat(cols[1]);
-            const conf = cols[9]; // Confidence di index 9
+            const conf = cols[9] ? cols[9].toLowerCase() : "nominal";
             if (!isNaN(lat) && !isNaN(lon)) {
               data.push({ lat, lon, brightness: cols[2], date: cols[5], time: cols[6], confidence: conf });
             }
@@ -198,7 +219,7 @@ export default function App() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [days]);
+  }, [days, isStarted]);
 
   useEffect(() => { if (isSearching && searchInputRef.current) searchInputRef.current.focus(); }, [isSearching]);
 
@@ -210,12 +231,12 @@ export default function App() {
       const data = await res.json();
       if (data && data.length > 0) {
         setMapCenter([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        setMapZoom(9);
         setIsSearching(false); setSearch("");
       } else { alert("Lokasi tidak ditemukan"); }
     } catch (err) { alert("Gagal mencari lokasi"); } finally { setSearchLoading(false); }
   };
 
-  // Filter data berdasarkan Confidence
   const filteredFires = useMemo(() => {
     if (!highConfOnly) return fires;
     return fires.filter(f => f.confidence === "high" || f.confidence === "h");
@@ -229,42 +250,52 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* Peta selalu di-render di background */}
       <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
         <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
         
-        {/* Layer Citra Asap Satelit */}
-        {showSmokeLayer && (
+        {showSmokeLayer && isStarted && (
           <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.5} />
         )}
 
-        <MapController center={mapCenter} />
+        <MapController center={mapCenter} zoom={mapZoom} />
         <MapCenterTracker onChange={setCurrentCenter} />
         
-        <WindyLayer />
+        {isStarted && <WindyLayer />}
         
         {isStarted && (
           <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
             {filteredFires.map((fire, i) => (
-              <Marker key={i} position={[fire.lat, fire.lon]} icon={fireIcon} eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setEnvInfo(null); setSelected(fire); } }} />
+              <Marker 
+                key={i} 
+                position={[fire.lat, fire.lon]} 
+                icon={createFireIcon(fire.confidence)} 
+                eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setEnvInfo(null); setSelected(fire); } }} 
+              />
             ))}
           </MarkerClusterGroup>
         )}
-        <ZoomControl />
+        
+        {/* Zoom control cuma muncul kalau udah mulai */}
+        {isStarted && <ZoomControl />}
       </MapContainer>
 
+      {/* --- LOADING SCREEN --- */}
+      {isLoadingMap && <LoadingScreen />}
+
       {/* --- LANDING OVERLAY --- */}
-      {!isStarted && (
+      {!isStarted && !isLoadingMap && (
         <div className="landing-overlay">
           <div className="landing-content">
             <h1>Karthutlaland</h1>
             <p>Sistem pemantauan anomali api, deforestasi, cuaca, dan kualitas udara Indonesia berbasis satelit.</p>
-            <button className="start-btn" onClick={() => setIsStarted(true)}>Mulai Pantau <IconSearch /></button>
+            <button className="start-btn" onClick={handleStart}>Mulai Pantau <IconSearch /></button>
           </div>
         </div>
       )}
 
       {/* --- UI UTAMA --- */}
-      {isStarted && (
+      {isStarted && !isLoadingMap && (
         <>
           <div className="floating-header">
             <h1 className="brand" onClick={() => setIsStarted(false)}>Karthutlaland</h1>
@@ -314,6 +345,22 @@ export default function App() {
             </div>
           )}
 
+          {/* Tombol Lokasi Saya */}
+          {!selected && !envInfo && (
+            <button className="locate-btn" onClick={handleLocate}>
+              <IconLocate />
+            </button>
+          )}
+
+          {/* Legenda Peta */}
+          {!selected && !envInfo && (
+            <div className="map-legend">
+              <div className="legend-item"><span className="legend-dot" style={{background:"#22c55e"}}></span> Low</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:"#eab308"}}></span> Nominal</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:"#ef4444"}}></span> High</div>
+            </div>
+          )}
+
           {!selected && !envInfo && (
             <div className="floating-footer">
               {loading ? <span className="muted">Memuat data...</span> : filteredFires.length === 0 ? (
@@ -336,7 +383,6 @@ export default function App() {
             </div>
           )}
 
-          {/* PANEL DETAIL API */}
           {selected && (
             <div className="floating-panel">
               <div className="panel-head">
@@ -346,12 +392,10 @@ export default function App() {
               <div className="row"><IconTarget /><span className="label">Koordinat</span><span className="value">{selected.lat.toFixed(3)}, {selected.lon.toFixed(3)}</span></div>
               <div className="row"><IconThermo /><span className="label">Suhu</span><span className="value">{selected.brightness} K</span></div>
               <div className="row"><IconClock /><span className="label">Waktu</span><span className="value">{selected.date} · {String(selected.time).padStart(4, "0").slice(0, 2)}:{String(selected.time).padStart(4, "0").slice(2)}</span></div>
-              <div className="row"><IconWind /><span className="label">Arah Angin</span><span className="value">{selected.confidence === 'high' ? 'Asap menyebar cepat' : 'Terdeteksi'}</span></div>
-              <div className="row"><IconChart /><span className="label">Keyakinan</span><span className="value" style={{textTransform:'capitalize'}}>{selected.confidence || 'Nominal'}</span></div>
+              <div className="row"><IconChart /><span className="label">Keyakinan</span><span className="value" style={{textTransform:'capitalize'}}>{selected.confidence}</span></div>
             </div>
           )}
 
-          {/* TAMPILKAN GRAFIK KALAU LAGI NGGAK KLIK APA-APA */}
           {!selected && !envInfo && chartData.length > 0 && (
             <div className="floating-panel" style={{ bottom: '70px' }}>
                <TrendChart data={chartData} />
