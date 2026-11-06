@@ -1,18 +1,16 @@
-import { memo, useEffect, useRef, useState } from "react";
-import { CircleMarker, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { CircleMarker, GeoJSON, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
-import "leaflet-velocity/dist/leaflet-velocity.js"; // harus setelah leaflet (membutuhkan window.L)
+import "leaflet-velocity/dist/leaflet-velocity.js";
 import Icon, { FLAME_SVG } from "./Icon";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, RAIN } from "../config/mapConfig";
 import { fetchWindData } from "../lib/weather";
 
-// Tile layer dengan batas zoom yang benar: tile asli sampai maxNativeZoom, di atasnya diperbesar.
 export function SourceTileLayer({ src, ...props }) {
   return <TileLayer url={src.url} maxNativeZoom={src.maxNativeZoom} maxZoom={MAP_MAX_ZOOM} attribution={src.attribution} {...props} />;
 }
 
-// Elemen di dalam peta tidak boleh meneruskan klik/gulir ke peta (klik peta memilih titik).
 function useShieldFromMap(ref) {
   useEffect(() => {
     if (!ref.current) return;
@@ -29,13 +27,33 @@ export function MapController({ target }) {
   return null;
 }
 
-// Menyimpan pusat peta di ref (tanpa re-render) dan meneruskan klik peta.
 export function MapEvents({ onPick, centerRef }) {
   const map = useMapEvents({
     click: (e) => { const p = e.latlng.wrap(); onPick(p.lat, p.lng); },
     moveend: () => { const c = map.getCenter(); centerRef.current = [c.lat, c.lng]; },
   });
   useEffect(() => { const c = map.getCenter(); centerRef.current = [c.lat, c.lng]; }, [map, centerRef]);
+  return null;
+}
+
+// Tracker BBOX untuk layer API (RADD/Peat)
+export function MapBoundsTracker({ onChange }) {
+  const map = useMap();
+  useEffect(() => {
+    const updateBounds = () => {
+      const zoom = map.getZoom();
+      if (zoom < 7) { onChange(null); return; } // Jangan fetch kalau zoom out terlalu jauh
+      
+      const b = map.getBounds();
+      const bboxStr = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]
+        .map(n => n.toFixed(2))
+        .join(",");
+      onChange(bboxStr);
+    };
+    map.on("moveend", updateBounds);
+    updateBounds();
+    return () => map.off("moveend", updateBounds);
+  }, [map, onChange]);
   return null;
 }
 
@@ -53,8 +71,6 @@ export function ZoomControl() {
   );
 }
 
-// Bilah status bawah: koordinat, zoom, dan ringkasan hotspot. State kursor terisolasi di sini
-// agar gerakan mouse tidak me-render ulang seluruh aplikasi.
 export function StatusBar({ info }) {
   const map = useMap();
   const ref = useRef(null);
@@ -145,4 +161,55 @@ export function WindLayer({ enabled, onStatus }) {
     return () => { controller.abort(); if (layer && map.hasLayer(layer)) map.removeLayer(layer); };
   }, [enabled, map, onStatus]);
   return null;
+}
+
+// ==========================================
+// LAYER API VEKTOR (RADD & PEAT)
+// ==========================================
+export function ApiVectorLayer({ type, enabled, color = '#ef4444', bbox }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    if (!enabled || !bbox) {
+      setData(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    // Debounce 400ms agar tidak spam request saat peta digeser
+    const timer = setTimeout(async () => {
+      try {
+        const url = `/api/proxy?type=${encodeURIComponent(type)}&bbox=${encodeURIComponent(bbox)}`;
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json?.type === 'FeatureCollection') setData(json);
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error(`[ApiVectorLayer:${type}]`, err.message);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [type, enabled, bbox]);
+
+  const style = useMemo(
+    () => ({ color, weight: 1, opacity: 0.8, fillColor: color, fillOpacity: 0.35 }),
+    [color]
+  );
+
+  if (!enabled || !data?.features?.length) return null;
+
+  return (
+    <GeoJSON
+      key={`${type}-${bbox}`}
+      data={data}
+      style={style}
+      pointToLayer={(_, latlng) =>
+        L.circleMarker(latlng, { radius: 4, color, fillColor: color, fillOpacity: 0.7, weight: 1 })
+      }
+    />
+  );
 }

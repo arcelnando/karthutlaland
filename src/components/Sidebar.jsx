@@ -87,6 +87,17 @@ export default function Sidebar(p) {
 
         <Section icon="tree" title="FOREST & DEFORESTATION">
           <LayerRow title="Tree cover loss" detail="UMD / GFW · 2001-2025 · 30 m" checked={p.layers.loss} onChange={() => p.toggleLayer("loss")} status={p.layers.loss ? "ok" : "off"} statusText={p.layers.loss ? `Aktif · zoom asli ${GFW_LOSS.maxNativeZoom}` : "Nonaktif"} opacity={p.opacity.loss} onOpacity={(v) => p.setOpacity("loss", v)} />
+          
+          {/* TAMBAHAN: RADD ALERTS */}
+          <LayerRow 
+            title="RADD Alerts" 
+            detail="Radar Deforestation Alert (L-band SAR)"
+            checked={!!p.layers.radd} 
+            onChange={() => p.toggleLayer("radd")} 
+            status={p.layers.radd ? "ok" : "off"} 
+            statusText={p.layers.radd ? "Aktif" : "Nonaktif"} 
+          />
+
           {group("forest")}
           <p className="note">Tree cover loss, deforestasi, dan pembalakan liar bukan istilah yang setara. Layer ini tidak menentukan penyebab kehilangan tutupan.</p>
         </Section>
@@ -96,7 +107,19 @@ export default function Sidebar(p) {
           <p className="note">Aplikasi tidak mendeteksi sawit sendiri. Analisis tumpang tindih otomatis belum tersedia; aktifkan dua layer dan atur opasitas untuk perbandingan visual.</p>
         </Section>
 
-        <Section icon="tree" title="ECOSYSTEM MONITORING">{group("ecosystem")}</Section>
+        <Section icon="tree" title="ECOSYSTEM MONITORING">
+          {/* TAMBAHAN: PEATLAND */}
+          <LayerRow 
+            title="Peatland" 
+            detail="Lahan gambut (GFW / WRI)"
+            checked={!!p.layers.peat} 
+            onChange={() => p.toggleLayer("peat")} 
+            status={p.layers.peat ? "ok" : "off"} 
+            statusText={p.layers.peat ? "Aktif" : "Nonaktif"} 
+          />
+
+          {group("ecosystem")}
+        </Section>
 
         <Section icon="rain" title="WEATHER INTELLIGENCE">
           <LayerRow title="Rain radar" detail="RainViewer · frame radar terbaru" checked={p.layers.rain} onChange={() => p.toggleLayer("rain")} status={rain.state}

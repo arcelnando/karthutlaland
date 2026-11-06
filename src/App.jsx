@@ -7,7 +7,11 @@ import Icon from "./components/Icon";
 import Sidebar, { StatusDot } from "./components/Sidebar";
 import { HotspotCard, PointCard } from "./components/Cards";
 import { AboutPanel, DataPanel } from "./components/InfoPanels";
-import { HotspotLayer, MapController, MapEvents, PointMarker, RainRadarLayer, SourceTileLayer, StatusBar, WindLayer, ZoomControl } from "./components/MapParts";
+import {
+  HotspotLayer, MapController, MapEvents, PointMarker,
+  RainRadarLayer, SourceTileLayer, StatusBar, WindLayer,
+  ZoomControl, ApiVectorLayer, MapBoundsTracker
+} from "./components/MapParts";
 import { BASEMAPS, CENTER, GFW_LOSS, LABELS, MAP_MAX_ZOOM, MAP_MIN_ZOOM, OPTIONAL_LAYERS } from "./config/mapConfig";
 import { CONF_RANK, MIN_CONF_RANK, dailyCounts, latestAcquisition, parseCsv } from "./lib/firms";
 import { fmtUtc } from "./lib/format";
@@ -16,7 +20,8 @@ import { fetchPointEnvironment } from "./lib/weather";
 const BASEMAP_IDS = Object.keys(BASEMAPS);
 const isMobile = () => typeof window !== "undefined" && window.matchMedia("(max-width: 759px)").matches;
 
-const INITIAL_LAYERS = { hotspots: true, loss: false, rain: false, wind: false, ...Object.fromEntries(OPTIONAL_LAYERS.map((x) => [x.id, false])) };
+// Tambahin radd & peat di state awal
+const INITIAL_LAYERS = { hotspots: true, loss: false, rain: false, wind: false, radd: false, peat: false, ...Object.fromEntries(OPTIONAL_LAYERS.map((x) => [x.id, false])) };
 const INITIAL_OPACITY = { loss: 0.8, rain: 0.65, ...Object.fromEntries(OPTIONAL_LAYERS.map((x) => [x.id, 0.75])) };
 
 function Legend({ layers, open, onToggle }) {
@@ -33,6 +38,8 @@ function Legend({ layers, open, onToggle }) {
           </>}
           {layers.loss && <div className="legend-row"><i className="swatch" style={{ background: GFW_LOSS.color }} />Tree cover loss (2001-2025)</div>}
           {active.map((x) => <div className="legend-row" key={x.id}><i className="swatch" style={{ background: x.color }} />{x.title}</div>)}
+          {layers.radd && <div className="legend-row"><i className="swatch" style={{ background: "#e3703a" }} />RADD Alerts</div>}
+          {layers.peat && <div className="legend-row"><i className="swatch" style={{ background: "#a1785a" }} />Peatland</div>}
           {layers.rain && <div className="legend-row">Radar: intensitas naik sesuai skema warna RainViewer</div>}
           {layers.wind && <div className="legend-row">Partikel angin: lebih terang = lebih kencang (model)</div>}
           <div className="legend-note">Layer tematik lain tampil bila sumber tile dikonfigurasi. Lihat Sumber & status data.</div>
@@ -44,7 +51,7 @@ function Legend({ layers, open, onToggle }) {
 
 export default function App() {
   const [started, setStarted] = useState(false);
-  const [modal, setModal] = useState(null); // "about" | "data" | null
+  const [modal, setModal] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(() => !isMobile());
   const [searchOpen, setSearchOpen] = useState(false);
@@ -69,6 +76,9 @@ export default function App() {
   const [point, setPoint] = useState(null);
   const [env, setEnv] = useState({ status: "idle" });
   const [view, setView] = useState(null);
+  
+  // State buat nyimpen string bbox (buat API proxy)
+  const [bbox, setBbox] = useState(null);
 
   const centerRef = useRef(CENTER);
   const searchRef = useRef(null);
@@ -79,7 +89,6 @@ export default function App() {
   const reportStatus = useCallback((id, status) => setLayerStatus((v) => ({ ...v, [id]: status })), []);
   const flyTo = useCallback((center, zoom) => setView({ center, zoom, n: Date.now() }), []);
 
-  // --- Hotspot NASA FIRMS (endpoint /api/hotspots tidak diubah) ---
   useEffect(() => {
     if (!started) return undefined;
     const controller = new AbortController();
@@ -102,7 +111,6 @@ export default function App() {
   const loading = fireState.status === "loading";
   const fireInfo = useMemo(() => ({ loading, error: fireState.status === "error" ? fireState.error : "", count: filteredFires.length, high: highCount, latest: fmtUtc(latestMs) }), [loading, fireState.status, fireState.error, filteredFires.length, highCount, latestMs]);
 
-  // --- Pemilihan titik: hotspot atau koordinat bebas ---
   const closePanels = useCallback(() => { envAbort.current?.abort(); setSelected(null); setPoint(null); setEnv({ status: "idle" }); }, []);
   const selectFire = useCallback((f) => { envAbort.current?.abort(); setPoint(null); setEnv({ status: "idle" }); setSelected(f); if (isMobile()) setMenuOpen(false); }, []);
   const openPoint = useCallback((lat, lon) => {
@@ -116,7 +124,6 @@ export default function App() {
       .catch((e) => { if (e.name !== "AbortError") { console.error(e); setEnv({ status: "error" }); } });
   }, []);
 
-  // --- Pencarian dan lokasi ---
   const toggleSearch = () => { setSearchOpen((v) => !v); setMenuOpen(false); window.setTimeout(() => searchRef.current?.focus(), 50); };
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -144,7 +151,6 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [modal, searchOpen, menuOpen, closePanels]);
 
-  // --- Status modul untuk panel transparansi ---
   const moduleStatus = useMemo(() => {
     const s = {};
     BASEMAP_IDS.forEach((id) => { s[id] = baseMap === id ? { state: "ok", label: "Aktif", note: "Citra statis; lihat keterangan Pembaruan" } : { state: "off" }; });
@@ -153,6 +159,8 @@ export default function App() {
       : fireState.status === "ok" ? { state: "ok", timestamp: latestMs, note: fires.length ? "Tidak ada timestamp valid pada data" : "Tidak ada hotspot pada rentang ini", label: `Tersedia · diambil ${fmtUtc(fireState.fetchedAt)}` } : { state: "off" };
     s.loss = layers.loss ? { state: "ok", label: "Aktif", note: "Dataset tahunan, tanpa timestamp harian" } : { state: "off" };
     OPTIONAL_LAYERS.forEach((x) => { s[x.id] = !x.url ? { state: "unconfigured", note: `Set ${x.env} untuk mengaktifkan` } : layers[x.id] ? { state: "ok", label: "Aktif", note: "Timestamp mengikuti penyedia data" } : { state: "off", note: "Dikonfigurasi, belum diaktifkan" }; });
+    s.radd = { state: layers.radd ? "ok" : "off", note: "Data vektor via API" };
+    s.peat = { state: layers.peat ? "ok" : "off", note: "Data vektor via API" };
     s.rain = layerStatus.rain || { state: "off" };
     s.wind = layerStatus.wind || { state: "off" };
     s.point = env.status === "ok" ? { state: "ok", note: `Data model ${env.data.sourceTime || "—"} (${env.data.timezone || "waktu lokal"})`, label: "Tersedia" } : env.status === "loading" ? { state: "loading" } : env.status === "error" ? { state: "error" } : { state: "off", note: "Klik peta untuk memilih koordinat" };
@@ -167,9 +175,7 @@ export default function App() {
     <main className={`app-shell${started ? " is-started" : ""}`}>
       <header className={`topbar${searchOpen ? " search-open" : ""}`}>
         <button className="brand" onClick={() => setModal("about")} aria-label="About Karthutlaland" tabIndex={started ? 0 : -1}>
-          <span className="brand-symbol">
-            <img src="/logo.png" alt="Logo" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
-          </span>
+          <span className="brand-symbol"><Icon name="tree" size={17} /></span>
           <span className="brand-text"><b>KARTHUTLALAND</b><small>ENVIRONMENTAL INTELLIGENCE</small></span>
         </button>
         {searchOpen && (
@@ -192,16 +198,25 @@ export default function App() {
 
       <div className={`map-area${menuOpen ? " sidebar-open" : ""}`}>
         <MapContainer center={CENTER} zoom={5} minZoom={MAP_MIN_ZOOM} maxZoom={MAP_MAX_ZOOM} className="map" zoomControl={false} attributionControl={false} preferCanvas bounceAtZoomLimits={false}>
+          
           <SourceTileLayer key={baseMap} src={basemap} />
           {showLabels && <SourceTileLayer src={LABELS} opacity={0.8} zIndex={300} />}
           {started && layers.loss && <SourceTileLayer src={GFW_LOSS} opacity={opacity.loss} zIndex={410} />}
           {started && activeOptional.map((x) => <SourceTileLayer key={x.id} src={{ url: x.url, maxNativeZoom: x.maxNativeZoom, attribution: `${x.title}: sumber tile terkonfigurasi` }} opacity={opacity[x.id]} zIndex={420} />)}
+          
+          {/* RADD & Peatland API Layer */}
+          {started && <MapBoundsTracker onChange={setBbox} />}
+          {started && layers.radd && <ApiVectorLayer type="radd" enabled={true} bbox={bbox} color="#e3703a" />}
+          {started && layers.peat && <ApiVectorLayer type="peat" enabled={true} bbox={bbox} color="#a1785a" />}
+
           {started && <RainRadarLayer enabled={layers.rain} opacity={opacity.rain} onStatus={reportStatus} />}
           {started && <WindLayer enabled={layers.wind} onStatus={reportStatus} />}
           {started && layers.hotspots && <HotspotLayer fires={filteredFires} onSelect={selectFire} />}
+          
           <MapController target={view} />
           <MapEvents onPick={openPoint} centerRef={centerRef} />
           <PointMarker point={point} />
+          
           <AttributionControl position="bottomright" prefix={false} />
           <ScaleControl position="bottomleft" imperial={false} />
           {started && <ZoomControl />}
@@ -238,15 +253,7 @@ export default function App() {
 
       {!started && (
         <section className="landing-screen">
-          <div className="landing-top">
-            <span className="brand-lockup">
-              <span className="brand-symbol">
-                <img src="/logo.png" alt="Logo" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
-              </span>
-              KARTHUTLALAND
-            </span>
-            <span className="landing-tag">ENVIRONMENTAL INTELLIGENCE · INDONESIA</span>
-          </div>
+          <div className="landing-top"><span className="brand-lockup"><span className="brand-symbol"><Icon name="tree" size={18} /></span>KARTHUTLALAND</span><span className="landing-tag">ENVIRONMENTAL INTELLIGENCE · INDONESIA</span></div>
           <div className="landing-content">
             <div className="eyebrow">EARTH OBSERVATION · GEOSPATIAL MONITORING</div>
             <h1>Melihat perubahan.<br /><em>Memahami dampaknya.</em></h1>
