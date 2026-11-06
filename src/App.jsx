@@ -11,12 +11,13 @@ import "./App.css";
 const IconTarget = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="7" /><circle cx="12" cy="12" r="2.5" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" strokeLinecap="round" /></svg>);
 const IconThermo = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0Z" /><path d="M12 9v6" /></svg>);
 const IconClock = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l2.5 2.5" /></svg>);
-const IconClose = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>);
+const IconClose = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>);
 const IconSearch = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>);
-const IconArrowRight = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>);
-const IconWind = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" /></svg>);
-const IconAir = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
-const IconRadar = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
+const IconWind = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" /></svg>);
+const IconAir = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
+const IconMenu = ({ size = 20 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>);
+const IconRadar = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
+const IconClock2 = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l2.5 2.5" /></svg>);
 
 // --- CUSTOM SVG MARKER ---
 const createFireIcon = () => {
@@ -61,7 +62,6 @@ function MapController({ center }) {
   return null;
 }
 
-// Komponen buat dapetin titik tengah peta
 function MapCenterTracker({ onChange }) {
   const map = useMap();
   useEffect(() => {
@@ -84,6 +84,8 @@ export default function App() {
   const [envLoading, setEnvLoading] = useState(false);
   const [currentCenter, setCurrentCenter] = useState([-2, 118]);
   
+  // State UI Menu
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [search, setSearch] = useState("");
   const [mapCenter, setMapCenter] = useState(null);
@@ -93,11 +95,11 @@ export default function App() {
   const searchInputRef = useRef(null);
   const cartoKey = import.meta.env.VITE_CARTO_KEY;
 
-  // Fungsi narik cuaca & polusi
   const fetchEnvironment = async (lat, lng) => {
     setEnvLoading(true);
     setEnvInfo(null);
     setSelected(null);
+    setMenuOpen(false);
     try {
       const [weatherRes, airRes] = await Promise.all([
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m`),
@@ -132,18 +134,11 @@ export default function App() {
         pm25: pm25, aqiLabel: aqi.label, aqiColor: aqi.color
       });
     } catch (err) {
-      alert("Gagal memuat data cuaca. Cek koneksi internet.");
+      alert("Gagal memuat data cuaca.");
     } finally {
       setEnvLoading(false);
     }
   };
-
-  // Otomatis tarik cuaca pas aplikasi pertama kali dibuka
-  useEffect(() => {
-    if (isStarted && !envInfo) {
-      fetchEnvironment(-2, 118); // Titik tengah Indonesia
-    }
-  }, [isStarted]);
 
   useEffect(() => {
     setLoading(true);
@@ -193,18 +188,6 @@ export default function App() {
     return { avg: avg.toFixed(1) };
   }, [fires]);
 
-  if (!isStarted) {
-    return (
-      <div className="landing">
-        <div className="landing-content">
-          <h1>Karthutlaland</h1>
-          <p>Sistem pemantauan anomali api, deforestasi, cuaca, dan kualitas udara Indonesia berbasis satelit dan model global.</p>
-          <button className="start-btn" onClick={() => setIsStarted(true)}>Mulai Pantau <IconArrowRight /></button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="app">
       <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
@@ -214,83 +197,110 @@ export default function App() {
         
         <WindyLayer />
         
-        <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
-          {fires.map((fire, i) => (
-            <Marker key={i} position={[fire.lat, fire.lon]} icon={fireIcon} eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setEnvInfo(null); setSelected(i); } }} />
-          ))}
-        </MarkerClusterGroup>
+        {isStarted && (
+          <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
+            {fires.map((fire, i) => (
+              <Marker key={i} position={[fire.lat, fire.lon]} icon={fireIcon} eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setEnvInfo(null); setSelected(i); } }} />
+            ))}
+          </MarkerClusterGroup>
+        )}
         
         <ZoomControl />
       </MapContainer>
 
-      {/* FLOATING HEADER */}
-      <div className="floating-header">
-        {!isSearching ? (
-          <div className="brand-wrap">
+      {/* --- LANDING OVERLAY --- */}
+      {!isStarted && (
+        <div className="landing-overlay">
+          <div className="landing-content">
+            <h1>Karthutlaland</h1>
+            <p>Sistem pemantauan anomali api, deforestasi, cuaca, dan kualitas udara Indonesia berbasis satelit.</p>
+            <button className="start-btn" onClick={() => setIsStarted(true)}>Mulai Pantau <IconSearch /></button>
+          </div>
+        </div>
+      )}
+
+      {/* --- UI UTAMA (MUNCUL SETELAH MULAI) --- */}
+      {isStarted && (
+        <>
+          {/* HEADER: Judul & Titik Tiga */}
+          <div className="floating-header">
             <h1 className="brand" onClick={() => setIsStarted(false)}>Karthutlaland</h1>
-            <button className="search-btn" onClick={() => setIsSearching(true)}><IconSearch /></button>
+            {!isSearching && (
+              <button className="menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
+                {menuOpen ? <IconClose /> : <IconMenu />}
+              </button>
+            )}
           </div>
-        ) : (
-          <form onSubmit={handleSearch} className="search-form">
-            <IconSearch size={16} />
-            <input ref={searchInputRef} type="text" placeholder="Cari wilayah..." value={search} onChange={(e) => setSearch(e.target.value)} />
-            {searchLoading ? <span className="loader">...</span> : <button type="button" className="close-btn" onClick={() => setIsSearching(false)}><IconClose size={14} /></button>}
-          </form>
-        )}
-      </div>
 
-      {/* TIME FILTER */}
-      <div className="time-filter">
-        {["1", "2", "3", "5"].map((d) => (
-          <button key={d} className={`time-btn ${days === d ? "active" : ""}`} onClick={() => setDays(d)}>{d}H</button>
-        ))}
-      </div>
-
-      {/* TOMBOL CEK LINGKUNGAN (Kanan Bawah) */}
-      <button 
-        className="env-btn" 
-        onClick={() => fetchEnvironment(currentCenter[0], currentCenter[1])}
-        disabled={envLoading}
-      >
-        <IconRadar />
-        <span>{envLoading ? "Memuat..." : "Cek Lingkungan"}</span>
-      </button>
-
-      {/* FLOATING FOOTER */}
-      {!selected && !envInfo && (
-        <div className="floating-footer">
-          {loading ? <span className="muted">Memuat data...</span> : fires.length === 0 ? (
-            <span className="muted">Tidak ada anomali api</span>
-          ) : (
-            <><span className="dot" /><span>{fires.length.toLocaleString('id-ID')} Titik</span>{stats && <span className="divider">|</span>}{stats && <span className="suhu">{stats.avg} K</span>}</>
+          {/* SEARCH BAR (Muncul kalau dipilih dari menu) */}
+          {isSearching && (
+            <div className="floating-search">
+              <form onSubmit={handleSearch} className="search-form">
+                <IconSearch size={16} />
+                <input ref={searchInputRef} type="text" placeholder="Cari wilayah..." value={search} onChange={(e) => setSearch(e.target.value)} />
+                {searchLoading ? <span className="loader">...</span> : <button type="button" className="close-btn" onClick={() => setIsSearching(false)}><IconClose size={14} /></button>}
+              </form>
+            </div>
           )}
-        </div>
-      )}
 
-      {/* PANEL LINGKUNGAN */}
-      {envInfo && (
-        <div className="floating-panel">
-          <div className="panel-head">
-            <span className="panel-title">Info Lingkungan</span>
-            <button className="close" onClick={() => setEnvInfo(null)}><IconClose size={16} /></button>
-          </div>
-          <div className="row"><IconThermo /><span className="label">Cuaca</span><span className="value">{envInfo.temp}°C · {envInfo.weather}</span></div>
-          <div className="row"><IconAir /><span className="label">PM2.5</span><span className="value" style={{ color: envInfo.aqiColor }}>{envInfo.pm25} μg/m³ ({envInfo.aqiLabel})</span></div>
-          <div className="row"><IconWind /><span className="label">Angin</span><span className="value">{envInfo.speed} km/j · {envInfo.direction}°</span></div>
-        </div>
-      )}
+          {/* MENU DROPDOWN */}
+          {menuOpen && !isSearching && (
+            <div className="dropdown-menu">
+              <button className="menu-item" onClick={() => { setIsSearching(true); setMenuOpen(false); }}>
+                <IconSearch size={16} /> Cari Wilayah
+              </button>
+              <button className="menu-item" onClick={() => fetchEnvironment(currentCenter[0], currentCenter[1])}>
+                <IconRadar size={16} /> Cek Lingkungan {envLoading && "..."}
+              </button>
+              
+              <div className="menu-divider"></div>
+              
+              <div className="menu-label"><IconClock2 size={14} /> Mundurin Data</div>
+              <div className="time-filter-dropdown">
+                {["1", "2", "3", "5"].map((d) => (
+                  <button key={d} className={`time-btn ${days === d ? "active" : ""}`} onClick={() => { setDays(d); setMenuOpen(false); }}>{d}H</button>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* PANEL DETAIL API */}
-      {selected !== null && fires[selected] && (
-        <div className="floating-panel">
-          <div className="panel-head">
-            <span className="panel-title">Detail Anomali Api</span>
-            <button className="close" onClick={() => setSelected(null)}><IconClose size={16} /></button>
-          </div>
-          <div className="row"><IconTarget /><span className="label">Koordinat</span><span className="value">{fires[selected].lat.toFixed(3)}, {fires[selected].lon.toFixed(3)}</span></div>
-          <div className="row"><IconThermo /><span className="label">Suhu</span><span className="value">{fires[selected].brightness} K</span></div>
-          <div className="row"><IconClock /><span className="label">Waktu</span><span className="value">{fires[selected].date} · {String(fires[selected].time).padStart(4, "0").slice(0, 2)}:{String(fires[selected].time).padStart(4, "0").slice(2)}</span></div>
-        </div>
+          {/* FLOATING FOOTER (Status) */}
+          {!selected && !envInfo && (
+            <div className="floating-footer">
+              {loading ? <span className="muted">Memuat data...</span> : fires.length === 0 ? (
+                <span className="muted">Tidak ada anomali api</span>
+              ) : (
+                <><span className="dot" /><span>{fires.length.toLocaleString('id-ID')} Titik</span>{stats && <span className="divider">|</span>}{stats && <span className="suhu">{stats.avg} K</span>}</>
+              )}
+            </div>
+          )}
+
+          {/* PANEL LINGKUNGAN */}
+          {envInfo && (
+            <div className="floating-panel">
+              <div className="panel-head">
+                <span className="panel-title">Info Lingkungan</span>
+                <button className="close" onClick={() => setEnvInfo(null)}><IconClose size={16} /></button>
+              </div>
+              <div className="row"><IconThermo /><span className="label">Cuaca</span><span className="value">{envInfo.temp}°C · {envInfo.weather}</span></div>
+              <div className="row"><IconAir /><span className="label">PM2.5</span><span className="value" style={{ color: envInfo.aqiColor }}>{envInfo.pm25} μg/m³ ({envInfo.aqiLabel})</span></div>
+              <div className="row"><IconWind /><span className="label">Angin</span><span className="value">{envInfo.speed} km/j · {envInfo.direction}°</span></div>
+            </div>
+          )}
+
+          {/* PANEL DETAIL API */}
+          {selected !== null && fires[selected] && (
+            <div className="floating-panel">
+              <div className="panel-head">
+                <span className="panel-title">Detail Anomali Api</span>
+                <button className="close" onClick={() => setSelected(null)}><IconClose size={16} /></button>
+              </div>
+              <div className="row"><IconTarget /><span className="label">Koordinat</span><span className="value">{fires[selected].lat.toFixed(3)}, {fires[selected].lon.toFixed(3)}</span></div>
+              <div className="row"><IconThermo /><span className="label">Suhu</span><span className="value">{fires[selected].brightness} K</span></div>
+              <div className="row"><IconClock /><span className="label">Waktu</span><span className="value">{fires[selected].date} · {String(fires[selected].time).padStart(4, "0").slice(0, 2)}:{String(fires[selected].time).padStart(4, "0").slice(2)}</span></div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
