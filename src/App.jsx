@@ -102,10 +102,19 @@ const TrendChart = ({ data }) => {
   );
 };
 
+// --- LOADING SCREEN SATELIT ---
 const LoadingScreen = () => (
   <div className="loading-screen">
-    <div className="earth-warp"><div className="earth-sphere"></div></div>
-    <p>Memetakan Anomali...</p>
+    <div className="satellite-container">
+      <div className="satellite-body">
+        <div className="satellite-panel left"></div>
+        <div className="satellite-core"></div>
+        <div className="satellite-panel right"></div>
+      </div>
+      <div className="radar-beam"></div>
+    </div>
+    <div className="loading-earth-half"></div>
+    <p>Mengkalibrasi Orbit...</p>
   </div>
 );
 
@@ -134,7 +143,6 @@ export default function App() {
   const [showForest, setShowForest] = useState(false);
   const [mapZoom, setMapZoom] = useState(5);
 
-  // State Modal Info
   const [showInfoModal, setShowInfoModal] = useState(false);
 
   const searchInputRef = useRef(null);
@@ -142,7 +150,7 @@ export default function App() {
 
   const handleStart = () => {
     setIsLoadingMap(true);
-    setTimeout(() => { setIsStarted(true); setIsLoadingMap(false); }, 2500);
+    setTimeout(() => { setIsStarted(true); setIsLoadingMap(false); }, 3000);
   };
 
   const handleLocate = () => {
@@ -270,8 +278,9 @@ export default function App() {
       <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
         <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
         
+        {/* Layer Deforestasi yang lebih jelas */}
         {showForest && isStarted && (
-          <TileLayer url="https://tiles.globalforestwatch.org/wri_trees_in_mosaic_landscapes/v20220922/default/{z}/{x}/{y}.png" opacity={0.4} />
+          <TileLayer url="https://tiles.globalforestwatch.org/tree_cover_loss/v1.11/default/{z}/{x}/{y}.png" opacity={0.7} />
         )}
 
         {showSmokeLayer && isStarted && (
@@ -307,12 +316,15 @@ export default function App() {
 
       {!isStarted && !isLoadingMap && (
         <div className="landing-overlay">
-          <div className="earth-bg">
-             <div className="earth-sphere"></div>
+          <div className="landing-earth-bg">
+             <div className="earth-half-sphere"></div>
+             <div className="scanline"></div>
           </div>
           <div className="landing-content">
-            <h1>Karthutlaland</h1>
-            <p>Sistem pemantauan anomali api, deforestasi, cuaca, dan kualitas udara Indonesia berbasis satelit.</p>
+            <div className="typing-container">
+              <h1 className="typing-title">Karthutlaland</h1>
+            </div>
+            <p>Sistem pemantauan anomali api dan deforestasi Indonesia berbasis intelijen citra satelit.</p>
             <button className="start-btn" onClick={handleStart}>Mulai Pantau <IconSearch /></button>
           </div>
         </div>
@@ -360,7 +372,7 @@ export default function App() {
                 <IconMoon size={16} /> {nightMode ? "Matikan Mode Malam" : "Api Malam Hari"}
               </button>
               <button className="menu-item" onClick={() => setShowForest(!showForest)}>
-                <IconTree size={16} /> {showForest ? "Sembunyikan Hutan" : "Lihat Area Hutan"}
+                <IconTree size={16} /> {showForest ? "Sembunyikan Deforestasi" : "Lihat Deforestasi"}
               </button>
               <button className="menu-item" onClick={() => setShowSmokeLayer(!showSmokeLayer)}>
                 <IconSmoke size={16} /> {showSmokeLayer ? "Sembunyikan Asap" : "Lihat Citra Asap"}
@@ -386,7 +398,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Modal Info */}
           {showInfoModal && (
             <div className="modal-overlay" onClick={() => setShowInfoModal(false)}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -395,7 +406,7 @@ export default function App() {
                   <button className="close" onClick={() => setShowInfoModal(false)}><IconClose size={16} /></button>
                 </div>
                 <p className="modal-text">
-                  Ini adalah project iseng yang dikembangkan oleh <strong>solo developer</strong> untuk memantau anomali api dan deforestasi di Indonesia secara near-real-time. Data diambil dari NASA FIRMS dan Open-Meteo.
+                  Ini adalah project iseng yang dikembangkan oleh <strong>solo developer</strong> untuk memantau anomali api dan deforestasi secara near-real-time menggunakan intelijen citra satelit.
                 </p>
                 <a href="https://t.me/antidogma14" target="_blank" rel="noreferrer" className="telegram-btn">
                   <IconTelegram size={18} /> Hubungi di Telegram (@antidogma14)
@@ -406,9 +417,9 @@ export default function App() {
 
           {!selected && !envInfo && (
             <div className="map-legend">
-              <div className="legend-item"><span className="legend-dot" style={{background:"#22c55e"}}></span> Low</div>
-              <div className="legend-item"><span className="legend-dot" style={{background:"#eab308"}}></span> Nominal</div>
-              <div className="legend-item"><span className="legend-dot" style={{background:"#ef4444"}}></span> High</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:"#22c55e"}}></span> Rendah</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:"#eab308"}}></span> Sedang</div>
+              <div className="legend-item"><span className="legend-dot" style={{background:"#ef4444"}}></span> Tinggi</div>
             </div>
           )}
 
