@@ -65,7 +65,6 @@ function App() {
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(null);
 
-  // Ambil key dari env Vercel
   const cartoKey = import.meta.env.VITE_CARTO_KEY || "MASUKKAN_KEY_CARTO_KAMU_DISINI";
 
   useEffect(() => {
@@ -75,14 +74,20 @@ function App() {
         return res.text();
       })
       .then((csv) => {
-        const lines = csv.trim().split("\n");
+        // Bersihin spasi dan \r bawaan CSV
+        const cleanCsv = csv.replace(/\r/g, "").trim();
+        const lines = cleanCsv.split("\n");
+        
         if (lines.length < 2) {
           setFires([]);
           setLoading(false);
           return;
         }
-        const headers = lines[0].split(",");
+
+        // Ambil header dan bersihin spasinya
+        const headers = lines[0].split(",").map(h => h.trim());
         const idx = (name) => headers.indexOf(name);
+
         const latI = idx("latitude");
         const lonI = idx("longitude");
         const brightI = idx("bright_ti4");
@@ -150,7 +155,6 @@ function App() {
         zoomControl={false}
         attributionControl={false}
       >
-        {/* Perhatikan parameternya: ?key= (bukan ?api_key=) */}
         <TileLayer
           url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`}
         />
