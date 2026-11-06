@@ -22,8 +22,6 @@ const IconSmoke = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0
 const IconLocate = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
 const IconMoon = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>);
 const IconTree = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 22v-5"/><path d="M9 7l3-5 3 5"/><path d="M10 12l2-5 2 5"/><path d="M7 17a5 5 0 0 1 0-10h.5"/><path d="M17 17a5 5 0 0 0 0-10h-.5"/></svg>);
-const IconInfo = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>);
-const IconTelegram = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 3.5 2.5 10.5l5.5 2 1.5 6 3-4 5 4 4-15z"/><path d="M8 12.5 18 7"/></svg>);
 
 // --- CUSTOM SVG MARKER ---
 const createFireIcon = (confidence) => {
@@ -102,25 +100,11 @@ const TrendChart = ({ data }) => {
   );
 };
 
-// --- LOADING SCREEN ALA NASA (LOCK ON TARGET) ---
+// --- LOADING SCREEN BIASA ---
 const LoadingScreen = () => (
   <div className="loading-screen">
-    <div className="nasa-ui">
-      <div className="nasa-grid"></div>
-      <div className="nasa-target">
-        <div className="nasa-crosshair"></div>
-        <div className="nasa-reticle">
-          <span className="corner tl"></span>
-          <span className="corner tr"></span>
-          <span className="corner bl"></span>
-          <span className="corner br"></span>
-        </div>
-      </div>
-      <div className="nasa-text">
-        <p>SAT-LINK ESTABLISHED</p>
-        <p className="nasa-sub">Locking Target Coordinates...</p>
-      </div>
-    </div>
+    <div className="spinner"></div>
+    <p>Memuat Peta...</p>
   </div>
 );
 
@@ -149,14 +133,12 @@ export default function App() {
   const [showForest, setShowForest] = useState(false);
   const [mapZoom, setMapZoom] = useState(5);
 
-  const [showInfoModal, setShowInfoModal] = useState(false);
-
   const searchInputRef = useRef(null);
   const cartoKey = import.meta.env.VITE_CARTO_KEY;
 
   const handleStart = () => {
     setIsLoadingMap(true);
-    setTimeout(() => { setIsStarted(true); setIsLoadingMap(false); }, 3500); 
+    setTimeout(() => { setIsStarted(true); setIsLoadingMap(false); }, 2500); 
   };
 
   const handleLocate = () => {
@@ -281,53 +263,48 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* 3D MAP TILT */}
-      <div className="map-tilt-wrapper">
-        <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
-          <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
-          
-          {showForest && isStarted && (
-            <TileLayer url="https://tiles.globalforestwatch.org/tree_cover_loss/v1.11/default/{z}/{x}/{y}.png" opacity={0.7} />
-          )}
+      <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
+        <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
+        
+        {showForest && isStarted && (
+          <TileLayer url="https://tiles.globalforestwatch.org/tree_cover_loss/v1.11/default/{z}/{x}/{y}.png" opacity={0.7} />
+        )}
 
-          {showSmokeLayer && isStarted && (
-            <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.5} />
-          )}
+        {showSmokeLayer && isStarted && (
+          <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.5} />
+        )}
 
-          <MapController center={mapCenter} zoom={mapZoom} />
-          <MapCenterTracker onChange={setCurrentCenter} />
-          
-          {isStarted && <WindyLayer />}
-          
-          {isStarted && (
-            <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
-              {filteredFires.map((fire, i) => (
-                <Marker 
-                  key={i} 
-                  position={[fire.lat, fire.lon]} 
-                  icon={createFireIcon(fire.confidence)} 
-                  eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); handleFireClick(fire); } }} 
-                />
-              ))}
-            </MarkerClusterGroup>
-          )}
+        <MapController center={mapCenter} zoom={mapZoom} />
+        <MapCenterTracker onChange={setCurrentCenter} />
+        
+        {isStarted && <WindyLayer />}
+        
+        {isStarted && (
+          <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
+            {filteredFires.map((fire, i) => (
+              <Marker 
+                key={i} 
+                position={[fire.lat, fire.lon]} 
+                icon={createFireIcon(fire.confidence)} 
+                eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); handleFireClick(fire); } }} 
+              />
+            ))}
+          </MarkerClusterGroup>
+        )}
 
-          {smokeDirection && (
-            <Polyline positions={smokeDirection} pathOptions={{ color: '#ef4444', dashArray: '5, 10', weight: 2, opacity: 0.8 }} />
-          )}
-          
-          {isStarted && <ZoomControl />}
-        </MapContainer>
-      </div>
+        {smokeDirection && (
+          <Polyline positions={smokeDirection} pathOptions={{ color: '#ef4444', dashArray: '5, 10', weight: 2, opacity: 0.8 }} />
+        )}
+        
+        {isStarted && <ZoomControl />}
+      </MapContainer>
 
       {isLoadingMap && <LoadingScreen />}
 
       {!isStarted && !isLoadingMap && (
         <div className="landing-overlay">
-          <div className="galaxy-bg">
-            <div className="stars-layer-1"></div>
-            <div className="stars-layer-2"></div>
-            <div className="stars-layer-3"></div>
+          <div className="earth-bg">
+             <div className="earth-sphere"></div>
           </div>
           <div className="landing-content">
             <h1>Karthutlaland</h1>
@@ -339,8 +316,8 @@ export default function App() {
 
       {isStarted && !isLoadingMap && (
         <>
+          {/* Cuma Titik Tiga di Kanan Atas, Tanpa Header/Footer */}
           <div className="floating-header">
-            <h1 className="brand" onClick={() => setIsStarted(false)}>Karthutlaland</h1>
             {!isSearching && (
               <button className="menu-btn" onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <IconClose /> : <IconMenu />}
@@ -392,32 +369,6 @@ export default function App() {
                 {["1", "2", "3", "5"].map((d) => (
                   <button key={d} className={`time-btn ${days === d ? "active" : ""}`} onClick={() => { setDays(d); setMenuOpen(false); }}>{d}H</button>
                 ))}
-              </div>
-
-              <div className="menu-divider"></div>
-
-              <button className="menu-item" onClick={() => { setShowInfoModal(true); setMenuOpen(false); }}>
-                <IconInfo size={16} /> Tentang Project
-              </button>
-              <a href="https://t.me/antidogma14" target="_blank" rel="noreferrer" className="menu-item" style={{textDecoration:'none'}}>
-                <IconTelegram size={16} /> Hubungi Developer
-              </a>
-            </div>
-          )}
-
-          {showInfoModal && (
-            <div className="modal-overlay" onClick={() => setShowInfoModal(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                <div className="panel-head">
-                  <span className="panel-title">Tentang Project</span>
-                  <button className="close" onClick={() => setShowInfoModal(false)}><IconClose size={16} /></button>
-                </div>
-                <p className="modal-text">
-                  Ini adalah project iseng yang dikembangkan oleh <strong>solo developer</strong> untuk memantau anomali api dan deforestasi secara near-real-time menggunakan intelijen citra satelit.
-                </p>
-                <a href="https://t.me/antidogma14" target="_blank" rel="noreferrer" className="telegram-btn">
-                  <IconTelegram size={18} /> Hubungi di Telegram (@antidogma14)
-                </a>
               </div>
             </div>
           )}

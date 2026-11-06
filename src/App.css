@@ -20,27 +20,13 @@ body {
   overflow: hidden; background: var(--bg);
 }
 
-/* ==========================================
-   PETA 3D TILT EFFECT
-========================================= */
-.map-tilt-wrapper {
-  width: 100%; height: 100%;
-  perspective: 1200px; /* Bikin efek 3D */
-  overflow: hidden;
-}
-
-.map { 
-  width: 100%; height: 100%; background: var(--bg); z-index: 1; 
-  transform: rotateX(45deg) scale(1.3) translateY(-10%); /* Efek miring 3D */
-  transform-origin: center center;
-}
-
+/* --- MAP & MARKER --- */
+.map { width: 100%; height: 100%; background: var(--bg); z-index: 1; }
 .leaflet-container { background: var(--bg); }
 .leaflet-control-attribution { display: none; }
 
-/* Marker nyesuain kemiringan peta */
 .custom-fire-icon { background: transparent; border: none; }
-.custom-fire-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(0,0,0,0.8)); transform: rotateX(-45deg); }
+.custom-fire-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(0,0,0,0.8)); }
 
 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: transparent !important; border: none !important; }
 .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
@@ -52,8 +38,27 @@ body {
 }
 
 /* ==========================================
-   LANDING PAGE (GALAXY EFFECT)
+   EFEK BUMI 3D (CSS SPHERE)
 ========================================= */
+.earth-sphere {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/World_map_-_low_resolution.svg/1024px-World_map_-_low_resolution.svg.png');
+  background-size: cover;
+  background-position: center;
+  box-shadow: 
+    inset -40px -40px 80px rgba(0,0,0,0.9), 
+    inset 10px 10px 40px rgba(255,255,255,0.2),
+    0 0 50px rgba(239, 68, 68, 0.2);
+  animation: rotateEarth 30s linear infinite;
+}
+
+@keyframes rotateEarth {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* --- LANDING OVERLAY --- */
 .landing-overlay {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   z-index: 2000; background: #000;
@@ -61,38 +66,39 @@ body {
   overflow: hidden;
 }
 
-.galaxy-bg {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  z-index: 0; opacity: 0.6;
+.earth-bg {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120vw; height: 120vw;
+  max-width: 1000px; max-height: 1000px;
+  z-index: 0; opacity: 0.3;
+  animation: floatEarth 6s ease-in-out infinite;
 }
 
-/* 3 Layer Bintang Parallax */
-.stars-layer-1, .stars-layer-2, .stars-layer-3 {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background-image: radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)), radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0));
-  background-repeat: repeat;
-  background-size: 200px 200px;
-  animation: starsMove 60s linear infinite;
+@keyframes floatEarth {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-20px); }
 }
-.stars-layer-2 { background-size: 300px 300px; animation-duration: 100s; opacity: 0.7; }
-.stars-layer-3 { background-size: 400px 400px; animation-duration: 150s; opacity: 0.4; }
-
-@keyframes starsMove { from { background-position: 0 0; } to { background-position: 0 1000px; } }
 
 .landing-content {
   position: relative; z-index: 1;
   max-width: 400px; width: 100%;
   padding: 0 24px;
   display: flex; flex-direction: column; align-items: flex-start;
+  animation: slideUpLanding 0.8s ease-out;
 }
+@keyframes slideUpLanding { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 .landing-content h1 {
   color: #fff; font-size: clamp(36px, 8vw, 48px); font-weight: 700;
   letter-spacing: -2px; margin-bottom: 16px; line-height: 1.1;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.8);
 }
 .landing-content p {
   color: var(--text-muted); font-size: 15px; line-height: 1.6;
   margin-bottom: 40px; letter-spacing: -0.2px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
 .start-btn {
   display: flex; align-items: center; justify-content: space-between; width: 100%;
@@ -103,69 +109,34 @@ body {
 .start-btn:active { transform: scale(0.97); }
 
 /* ==========================================
-   LOADING SCREEN (NASA HUD)
+   LOADING SCREEN (SPINNER BIASA)
 ========================================= */
 .loading-screen {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   z-index: 3000; background: #050505;
-  display: flex; justify-content: center; align-items: center;
-  overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
 }
-.nasa-ui {
-  position: relative; width: 100%; height: 100%;
-  display: flex; justify-content: center; align-items: center;
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
 }
-.nasa-grid {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.loading-screen p {
+  color: var(--text-muted); font-size: 13px; font-weight: 500; letter-spacing: 1px;
 }
-.nasa-target {
-  position: relative; width: 200px; height: 200px;
-  display: flex; justify-content: center; align-items: center;
-}
-.nasa-crosshair {
-  position: absolute; width: 100%; height: 100%;
-  border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 50%;
-  animation: rotate 10s linear infinite;
-}
-.nasa-crosshair::before, .nasa-crosshair::after {
-  content: ''; position: absolute; background: rgba(239, 68, 68, 0.3);
-}
-.nasa-crosshair::before { top: 50%; left: 0; width: 100%; height: 1px; }
-.nasa-crosshair::after { left: 50%; top: 0; width: 1px; height: 100%; }
-@keyframes rotate { 100% { transform: rotate(360deg); } }
-
-.nasa-reticle {
-  position: relative; width: 80px; height: 80px;
-}
-.corner {
-  position: absolute; width: 15px; height: 15px;
-  border: 2px solid var(--accent);
-}
-.corner.tl { top: 0; left: 0; border-right: none; border-bottom: none; }
-.corner.tr { top: 0; right: 0; border-left: none; border-bottom: none; }
-.corner.bl { bottom: 0; left: 0; border-right: none; border-top: none; }
-.corner.br { bottom: 0; right: 0; border-left: none; border-top: none; }
-
-.nasa-text {
-  position: absolute; bottom: 15%; text-align: center;
-}
-.nasa-text p {
-  color: var(--accent); font-family: monospace; font-size: 14px; letter-spacing: 2px; margin-bottom: 8px;
-}
-.nasa-sub { color: var(--text-muted); font-size: 11px; animation: blink 1s infinite; }
-@keyframes blink { 50% { opacity: 0; } }
 
 /* ==========================================
-   UI UTAMA (FLOATING)
+   UI UTAMA (HANYA TITIK TIGA)
 ========================================= */
 .floating-header {
   position: absolute; top: calc(16px + env(safe-area-inset-top));
-  left: 16px; right: 16px; z-index: 1000;
-  display: flex; justify-content: space-between; align-items: center;
+  right: 16px; z-index: 1000;
+  display: flex; justify-content: flex-end; align-items: center;
 }
-.brand { color: var(--text-main); font-size: 20px; font-weight: 700; letter-spacing: -0.5px; cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
 .menu-btn {
   background: var(--surface); border: none; color: var(--text-main);
   width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
@@ -216,6 +187,7 @@ body {
 .close-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
 .loader { font-size: 12px; color: var(--text-muted); }
 
+/* --- LEGENDA & STATUS BAWAH --- */
 .map-legend {
   position: absolute; left: 16px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 1000;
   display: flex; flex-direction: column; gap: 4px;
@@ -259,28 +231,6 @@ body {
 .zoom button { width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: none; color: var(--text-main); cursor: pointer; }
 .zoom button:active { background: rgba(255,255,255,0.1); }
 .zoom-sep { height: 1px; background: var(--text-dim); margin: 0 10px; opacity: 0.5; }
-
-.modal-overlay {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 4000; background: rgba(0,0,0,0.7);
-  display: flex; justify-content: center; align-items: center;
-  padding: 24px; animation: fadeIn 0.2s ease-out;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal-content {
-  background: var(--surface); border-radius: 16px;
-  padding: 24px; width: 100%; max-width: 340px;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.modal-text { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 24px 0; }
-.modal-text strong { color: var(--text-main); }
-.telegram-btn {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  background: var(--text-main); color: var(--bg); text-decoration: none;
-  padding: 12px; border-radius: 8px; font-weight: 600; font-size: 14px;
-  transition: transform 0.2s;
-}
-.telegram-btn:active { transform: scale(0.98); }
 
 .trend-chart { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 .chart-header { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
