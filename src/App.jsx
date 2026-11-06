@@ -167,7 +167,9 @@ export default function App() {
     <main className={`app-shell${started ? " is-started" : ""}`}>
       <header className={`topbar${searchOpen ? " search-open" : ""}`}>
         <button className="brand" onClick={() => setModal("about")} aria-label="About Karthutlaland" tabIndex={started ? 0 : -1}>
-          <span className="brand-symbol"><Icon name="tree" size={17} /></span>
+          <span className="brand-symbol">
+            <img src="/logo.png" alt="Logo" style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+          </span>
           <span className="brand-text"><b>KARTHUTLALAND</b><small>ENVIRONMENTAL INTELLIGENCE</small></span>
         </button>
         {searchOpen && (
@@ -236,7 +238,15 @@ export default function App() {
 
       {!started && (
         <section className="landing-screen">
-          <div className="landing-top"><span className="brand-lockup"><span className="brand-symbol"><Icon name="tree" size={18} /></span>KARTHUTLALAND</span><span className="landing-tag">ENVIRONMENTAL INTELLIGENCE · INDONESIA</span></div>
+          <div className="landing-top">
+            <span className="brand-lockup">
+              <span className="brand-symbol">
+                <img src="/logo.png" alt="Logo" style={{ width: '22px', height: '22px', objectFit: 'contain' }} />
+              </span>
+              KARTHUTLALAND
+            </span>
+            <span className="landing-tag">ENVIRONMENTAL INTELLIGENCE · INDONESIA</span>
+          </div>
           <div className="landing-content">
             <div className="eyebrow">EARTH OBSERVATION · GEOSPATIAL MONITORING</div>
             <h1>Melihat perubahan.<br /><em>Memahami dampaknya.</em></h1>
@@ -252,4 +262,3 @@ export default function App() {
     </main>
   );
 }
-

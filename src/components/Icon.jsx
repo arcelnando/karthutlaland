@@ -7,7 +7,8 @@ const PATHS = {
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></>,
   locate: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3m0 14v3M2 12h3m14 0h3" /></>,
   flame: <path d="M12 22c4 0 7-2.8 7-6.7 0-3.1-1.8-5.3-4.6-8.3-.1 2.2-1.1 3.4-2.2 4.2C12 7.4 10.6 4.7 8 2 8.2 6 5 9.1 5 14.8 5 19 7.8 22 12 22Z" />,
-  tree: <><path d="M12 22v-5" /><path d="m12 2 5 7h-3l4 5H6l4-5H7l5-7Z" /></>,
+  // Mengganti ikon pohon dengan file logo.png dari folder public
+  tree: <image href="/logo.png" x="0" y="0" width="24" height="24" preserveAspectRatio="xMidYMid meet" />,
   layers: <><path d="m12 3 9 5-9 5-9-5 9-5Z" /><path d="m3 12 9 5 9-5M3 16l9 5 9-5" /></>,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   wind: <path d="M3 8h12a3 3 0 1 0-3-3M2 12h17a3 3 0 1 1-3 3M4 16h7" />,
