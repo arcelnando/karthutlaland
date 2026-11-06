@@ -5,8 +5,6 @@ export default async function handler(req, res) {
   const MAP_KEY = process.env.FIRMS_MAP_KEY;
   const BBOX = "95,-11,141,6"; 
   const SOURCE = "VIIRS_NOAA21_NRT";
-
-  // Ambil parameter ?days= dari frontend. Default: 1 hari
   const days = req.query.days || "1";
 
   if (!MAP_KEY) return res.status(500).json({ error: "FIRMS_MAP_KEY belum di-set" });
