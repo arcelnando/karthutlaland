@@ -23,6 +23,27 @@ const IconLocate = ({ size = 16 }) => (<svg width={size} height={size} viewBox="
 const IconMoon = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>);
 const IconTree = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 22v-5"/><path d="M9 7l3-5 3 5"/><path d="M10 12l2-5 2 5"/><path d="M7 17a5 5 0 0 1 0-10h.5"/><path d="M17 17a5 5 0 0 0 0-10h-.5"/></svg>);
 
+const IconRain = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 15a5 5 0 1 1 1.1-9.9A6 6 0 0 1 19 8a4 4 0 0 1-1 7"/><path d="m8 18-1 3m6-3-1 3m6-3-1 3"/></svg>);
+
+function RainRadarLayer() {
+  const [tileUrl, setTileUrl] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    fetch("https://api.rainviewer.com/public/weather-maps.json")
+      .then((res) => { if (!res.ok) throw new Error("Radar hujan tidak tersedia"); return res.json(); })
+      .then((data) => {
+        const frames = data?.radar?.nowcast?.length ? data.radar.nowcast : data?.radar?.past;
+        const latest = frames?.[frames.length - 1];
+        if (!latest || cancelled) return;
+        setTileUrl(`${data.host}${latest.path}/256/{z}/{x}/{y}/2/1_1.png`);
+      })
+      .catch((err) => console.warn("Rain radar:", err));
+    return () => { cancelled = true; };
+  }, []);
+  if (!tileUrl) return null;
+  return <TileLayer url={tileUrl} opacity={0.68} zIndex={450} />;
+}
+
 // --- CUSTOM SVG MARKER (IKON API + HALO MERAH) ---
 const createFireIcon = () => {
   const svgHtml = `
@@ -140,6 +161,7 @@ export default function App() {
   const [showSmokeLayer, setShowSmokeLayer] = useState(false); // Balik ke false
   const [nightMode, setNightMode] = useState(false);
   const [showForest, setShowForest] = useState(false);
+  const [showRainLayer, setShowRainLayer] = useState(false);
   const [mapZoom, setMapZoom] = useState(5);
 
   const searchInputRef = useRef(null);
@@ -179,19 +201,34 @@ export default function App() {
   const fetchEnvironment = async (lat, lng) => {
     setEnvLoading(true); setEnvInfo(null); setSelected(null); setSmokeDirection(null); setMenuOpen(false);
     try {
-      const [wRes, aRes] = await Promise.all([
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m`),
+      const [wRes, forecastRes, aRes] = await Promise.all([
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation,rain,showers`),
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=precipitation_probability,precipitation&forecast_days=1&timezone=auto`),
         fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&current=pm2_5`)
       ]);
-      const wData = await wRes.json(); const aData = await aRes.json();
+      const wData = await wRes.json(); const forecastData = await forecastRes.json(); const aData = await aRes.json();
       const getW = (c) => c===0?"Cerah":c<=3?"Berawan":c<=48?"Berkabut":c<=67?"Hujan":"Badai";
       const getA = (p) => p<=12?{l:"Baik",c:"#22c55e"}:p<=35.4?{l:"Sedang",c:"#eab308"}:p<=55.4?{l:"Tidak Sehat",c:"#f97316"}:{l:"Berbahaya",c:"#ef4444"};
-      const pm = aData.current?.pm2_5 || 0; const aq = getA(pm);
+      const pm = aData.current?.pm2_5 ?? null; const aq = pm == null ? {l:"Tidak tersedia",c:"var(--text-muted)"} : getA(pm);
+      const rainNow = Number(wData.current?.rain ?? 0);
+      const precipitation = Number(wData.current?.precipitation ?? 0);
+      const hourly = forecastData.hourly || {};
+      const now = Date.now();
+      const firstFutureHour = Math.max(0, (hourly.time || []).findIndex((time) => new Date(time).getTime() >= now));
+      const nextHours = (hourly.time || []).slice(firstFutureHour, firstFutureHour + 6).map((time, offset) => {
+        const i = firstFutureHour + offset;
+        return {
+          time: new Date(time).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+          probability: hourly.precipitation_probability?.[i] ?? 0,
+          amount: hourly.precipitation?.[i] ?? 0
+        };
+      });
 
       setEnvInfo({
         lat: lat.toFixed(3), lng: lng.toFixed(3),
         speed: wData.current.wind_speed_10m, direction: wData.current.wind_direction_10m,
         temp: wData.current.temperature_2m, weather: getW(wData.current.weather_code),
+        rain: rainNow, precipitation, nextHours,
         pm25: pm, aqiLabel: aq.l, aqiColor: aq.c
       });
     } catch (err) { alert("Gagal memuat data cuaca."); } 
@@ -286,6 +323,8 @@ export default function App() {
           <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.6} />
         )}
 
+        {showRainLayer && isStarted && <RainRadarLayer />}
+
         <MapController center={mapCenter} zoom={mapZoom} />
         <MapCenterTracker onChange={setCurrentCenter} />
         
@@ -363,6 +402,9 @@ export default function App() {
               <button className="menu-item" onClick={() => setNightMode(!nightMode)}>
                 <IconMoon size={16} /> {nightMode ? "Matikan Mode Malam" : "Api Malam Hari"}
               </button>
+              <button className="menu-item" onClick={() => { setShowRainLayer(!showRainLayer); setMenuOpen(false); }}>
+                <IconRain size={16} /> {showRainLayer ? "Matikan Radar Hujan" : "Radar Hujan"}
+              </button>
               <button className="menu-item" onClick={() => setShowForest(!showForest)}>
                 <IconTree size={16} /> {showForest ? "Sembunyikan Deforestasi" : "Lihat Deforestasi"}
               </button>
@@ -406,7 +448,10 @@ export default function App() {
                 <button className="close" onClick={() => setEnvInfo(null)}><IconClose size={16} /></button>
               </div>
               <div className="row"><IconThermo /><span className="label">Cuaca</span><span className="value">{envInfo.temp}°C · {envInfo.weather}</span></div>
-              <div className="row"><IconAir /><span className="label">PM2.5</span><span className="value" style={{ color: envInfo.aqiColor }}>{envInfo.pm25} μg/m³ ({envInfo.aqiLabel})</span></div>
+              <div className="row"><IconRain /><span className="label">Hujan saat ini</span><span className="value">{envInfo.rain.toFixed(1)} mm/jam</span></div>
+              <div className="row"><IconRain /><span className="label">Presipitasi</span><span className="value">{envInfo.precipitation.toFixed(1)} mm</span></div>
+              <div className="rain-forecast"><div className="chart-header">Peluang hujan · 6 jam</div><div className="rain-hours">{envInfo.nextHours.map((h, i) => <div className="rain-hour" key={i}><span>{h.time}</span><strong>{h.probability}%</strong><i><b style={{height:`${Math.max(4,h.probability)}%`}} /></i><small>{h.amount.toFixed(1)} mm</small></div>)}</div></div>
+              <div className="row"><IconAir /><span className="label">PM2.5</span><span className="value" style={{ color: envInfo.aqiColor }}>{envInfo.pm25 == null ? "—" : `${envInfo.pm25} μg/m³ (${envInfo.aqiLabel})`}</span></div>
               <div className="row"><IconWind /><span className="label">Angin</span><span className="value">{envInfo.speed} km/j · {envInfo.direction}°</span></div>
             </div>
           )}
