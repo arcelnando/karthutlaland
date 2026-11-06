@@ -17,7 +17,8 @@ const IconWind = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 
 const IconAir = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
 const IconMenu = ({ size = 20 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>);
 const IconRadar = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
-const IconClock2 = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l2.5 2.5" /></svg>);
+const IconChart = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>);
+const IconSmoke = ({ size = 16 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 14a4 4 0 1 1 7-2.6A4 4 0 0 1 18 14v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3Z"/><path d="M9 18v3M15 18v3"/></svg>);
 
 // --- CUSTOM SVG MARKER ---
 const createFireIcon = () => {
@@ -65,26 +66,58 @@ function MapController({ center }) {
 function MapCenterTracker({ onChange }) {
   const map = useMap();
   useEffect(() => {
-    const handleMove = () => {
-      const c = map.getCenter();
-      onChange([c.lat, c.lng]);
-    };
+    const handleMove = () => { const c = map.getCenter(); onChange([c.lat, c.lng]); };
     map.on('moveend', handleMove);
     return () => map.off('moveend', handleMove);
   }, [map, onChange]);
   return null;
 }
 
+// --- KOMPONEN GRAFIK SVG SEDERHANA ---
+const TrendChart = ({ data }) => {
+  if (!data || data.length === 0) return null;
+  
+  const maxVal = Math.max(...data.map(d => d.count), 1);
+  const width = 260; // Lebar grafik
+  const height = 60; // Tinggi grafik
+  const barWidth = width / data.length - 4;
+
+  return (
+    <div className="trend-chart">
+      <div className="chart-header">
+        <IconChart size={14} /> Tren 7 Hari
+      </div>
+      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+        {data.map((d, i) => {
+          const barHeight = (d.count / maxVal) * height;
+          const x = i * (width / data.length) + 2;
+          const y = height - barHeight;
+          return (
+            <g key={i}>
+              <rect x={x} y={y} width={barWidth} height={barHeight} fill="var(--accent)" rx="2" />
+            </g>
+          );
+        })}
+      </svg>
+      <div className="chart-labels">
+        {data.map((d, i) => (
+          <span key={i}>{d.label}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [isStarted, setIsStarted] = useState(false);
   const [fires, setFires] = useState([]);
+  const [chartData, setChartData] = useState([]); // Data grafik
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [envInfo, setEnvInfo] = useState(null);
   const [envLoading, setEnvLoading] = useState(false);
   const [currentCenter, setCurrentCenter] = useState([-2, 118]);
   
-  // State UI Menu
   const [menuOpen, setMenuOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [search, setSearch] = useState("");
@@ -92,69 +125,72 @@ export default function App() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [days, setDays] = useState("1");
   
+  // State Fitur Baru
+  const [highConfOnly, setHighConfOnly] = useState(false); // Filter Confidence
+  const [showSmokeLayer, setShowSmokeLayer] = useState(false); // Layer Asap
+
   const searchInputRef = useRef(null);
   const cartoKey = import.meta.env.VITE_CARTO_KEY;
 
+  // Fungsi narik data untuk grafik (7 hari)
+  useEffect(() => {
+    fetch("https://firms.modaps.eosdis.nasa.gov/api/area/csv/" + import.meta.env.VITE_FIRMS_MAP_KEY + "/VIIRS_NOAA21_NRT/95,-11,141,6/7")
+      .then(res => res.text())
+      .then(csv => {
+         // Logika parsing data 7 hari (sederhana)
+         const lines = csv.trim().split('\n');
+         const counts = {};
+         for (let i=1; i<lines.length; i++) {
+             const date = lines[i].split(',')[5];
+             counts[date] = (counts[date] || 0) + 1;
+         }
+         // Ambil 7 hari terakhir
+         const last7 = Object.keys(counts).sort().slice(-7).map(date => ({
+             label: date.slice(5), // Format MM-DD
+             count: counts[date]
+         }));
+         setChartData(last7);
+      }).catch(console.error);
+  }, []);
+
   const fetchEnvironment = async (lat, lng) => {
-    setEnvLoading(true);
-    setEnvInfo(null);
-    setSelected(null);
-    setMenuOpen(false);
+    setEnvLoading(true); setEnvInfo(null); setSelected(null); setMenuOpen(false);
     try {
-      const [weatherRes, airRes] = await Promise.all([
+      const [wRes, aRes] = await Promise.all([
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m`),
         fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&current=pm2_5`)
       ]);
-      const weatherData = await weatherRes.json();
-      const airData = await airRes.json();
-
-      const getWeatherDesc = (code) => {
-        if (code === 0) return "Cerah";
-        if (code <= 3) return "Berawan";
-        if (code <= 48) return "Berkabut";
-        if (code <= 67) return "Hujan";
-        if (code <= 77) return "Salju";
-        if (code <= 82) return "Hujan Lebat";
-        return "Badai";
-      };
-      const getAqiStatus = (pm) => {
-        if (pm <= 12) return { label: "Baik", color: "#22c55e" };
-        if (pm <= 35.4) return { label: "Sedang", color: "#eab308" };
-        if (pm <= 55.4) return { label: "Tidak Sehat", color: "#f97316" };
-        return { label: "Berbahaya", color: "#ef4444" };
-      };
-
-      const pm25 = airData.current?.pm2_5 || 0;
-      const aqi = getAqiStatus(pm25);
+      const wData = await wRes.json(); const aData = await aRes.json();
+      const getW = (c) => c===0?"Cerah":c<=3?"Berawan":c<=48?"Berkabut":c<=67?"Hujan":"Badai";
+      const getA = (p) => p<=12?{l:"Baik",c:"#22c55e"}:p<=35.4?{l:"Sedang",c:"#eab308"}:p<=55.4?{l:"Tidak Sehat",c:"#f97316"}:{l:"Berbahaya",c:"#ef4444"};
+      const pm = aData.current?.pm2_5 || 0; const aq = getA(pm);
 
       setEnvInfo({
         lat: lat.toFixed(3), lng: lng.toFixed(3),
-        speed: weatherData.current.wind_speed_10m, direction: weatherData.current.wind_direction_10m,
-        temp: weatherData.current.temperature_2m, weather: getWeatherDesc(weatherData.current.weather_code),
-        pm25: pm25, aqiLabel: aqi.label, aqiColor: aqi.color
+        speed: wData.current.wind_speed_10m, direction: wData.current.wind_direction_10m,
+        temp: wData.current.temperature_2m, weather: getW(wData.current.weather_code),
+        pm25: pm, aqiLabel: aq.l, aqiColor: aq.c
       });
-    } catch (err) {
-      alert("Gagal memuat data cuaca.");
-    } finally {
-      setEnvLoading(false);
-    }
+    } catch (err) { alert("Gagal memuat data cuaca."); } 
+    finally { setEnvLoading(false); }
   };
 
   useEffect(() => {
     setLoading(true);
-    const timestamp = new Date().getTime();
-    fetch(`/api/hotspots?days=${days}&t=${timestamp}`)
+    const ts = new Date().getTime();
+    fetch(`/api/hotspots?days=${days}&t=${ts}`)
       .then((res) => res.text())
       .then((csv) => {
         const lines = csv.replace(/\r/g, "").trim().split("\n");
         const data = [];
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(",").map(c => c.trim());
-          if (cols.length >= 10 && cols[0] !== "" && cols[0] !== "latitude") {
+          if (cols.length >= 10 && cols[0] !== "latitude") {
             const lat = parseFloat(cols[0]);
             const lon = parseFloat(cols[1]);
+            const conf = cols[9]; // Confidence di index 9
             if (!isNaN(lat) && !isNaN(lon)) {
-              data.push({ lat, lon, brightness: cols[2], date: cols[5], time: cols[6] });
+              data.push({ lat, lon, brightness: cols[2], date: cols[5], time: cols[6], confidence: conf });
             }
           }
         }
@@ -167,31 +203,40 @@ export default function App() {
   useEffect(() => { if (isSearching && searchInputRef.current) searchInputRef.current.focus(); }, [isSearching]);
 
   const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!search.trim()) return;
+    e.preventDefault(); if (!search.trim()) return;
     setSearchLoading(true);
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(search)}&limit=1`);
       const data = await res.json();
       if (data && data.length > 0) {
         setMapCenter([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
-        setIsSearching(false);
-        setSearch("");
+        setIsSearching(false); setSearch("");
       } else { alert("Lokasi tidak ditemukan"); }
-    } catch (err) { alert("Gagal mencari lokasi"); } 
-    finally { setSearchLoading(false); }
+    } catch (err) { alert("Gagal mencari lokasi"); } finally { setSearchLoading(false); }
   };
 
+  // Filter data berdasarkan Confidence
+  const filteredFires = useMemo(() => {
+    if (!highConfOnly) return fires;
+    return fires.filter(f => f.confidence === "high" || f.confidence === "h");
+  }, [fires, highConfOnly]);
+
   const stats = useMemo(() => {
-    if (!fires.length) return null;
-    const avg = fires.reduce((s, f) => s + (parseFloat(f.brightness) || 0), 0) / fires.length;
+    if (!filteredFires.length) return null;
+    const avg = filteredFires.reduce((s, f) => s + (parseFloat(f.brightness) || 0), 0) / filteredFires.length;
     return { avg: avg.toFixed(1) };
-  }, [fires]);
+  }, [filteredFires]);
 
   return (
     <div className="app">
       <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
         <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
+        
+        {/* Layer Citra Asap Satelit */}
+        {showSmokeLayer && (
+          <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.5} />
+        )}
+
         <MapController center={mapCenter} />
         <MapCenterTracker onChange={setCurrentCenter} />
         
@@ -199,12 +244,11 @@ export default function App() {
         
         {isStarted && (
           <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
-            {fires.map((fire, i) => (
-              <Marker key={i} position={[fire.lat, fire.lon]} icon={fireIcon} eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setEnvInfo(null); setSelected(i); } }} />
+            {filteredFires.map((fire, i) => (
+              <Marker key={i} position={[fire.lat, fire.lon]} icon={fireIcon} eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); setEnvInfo(null); setSelected(fire); } }} />
             ))}
           </MarkerClusterGroup>
         )}
-        
         <ZoomControl />
       </MapContainer>
 
@@ -219,10 +263,9 @@ export default function App() {
         </div>
       )}
 
-      {/* --- UI UTAMA (MUNCUL SETELAH MULAI) --- */}
+      {/* --- UI UTAMA --- */}
       {isStarted && (
         <>
-          {/* HEADER: Judul & Titik Tiga */}
           <div className="floating-header">
             <h1 className="brand" onClick={() => setIsStarted(false)}>Karthutlaland</h1>
             {!isSearching && (
@@ -232,7 +275,6 @@ export default function App() {
             )}
           </div>
 
-          {/* SEARCH BAR (Muncul kalau dipilih dari menu) */}
           {isSearching && (
             <div className="floating-search">
               <form onSubmit={handleSearch} className="search-form">
@@ -243,7 +285,6 @@ export default function App() {
             </div>
           )}
 
-          {/* MENU DROPDOWN */}
           {menuOpen && !isSearching && (
             <div className="dropdown-menu">
               <button className="menu-item" onClick={() => { setIsSearching(true); setMenuOpen(false); }}>
@@ -255,7 +296,16 @@ export default function App() {
               
               <div className="menu-divider"></div>
               
-              <div className="menu-label"><IconClock2 size={14} /> Mundurin Data</div>
+              <button className="menu-item" onClick={() => setHighConfOnly(!highConfOnly)}>
+                <IconChart size={16} /> {highConfOnly ? "Tampilkan Semua Api" : "Filter Api Serius"}
+              </button>
+              <button className="menu-item" onClick={() => setShowSmokeLayer(!showSmokeLayer)}>
+                <IconSmoke size={16} /> {showSmokeLayer ? "Sembunyikan Asap" : "Lihat Citra Asap"}
+              </button>
+              
+              <div className="menu-divider"></div>
+              
+              <div className="menu-label"><IconClock size={14} /> Mundurin Data</div>
               <div className="time-filter-dropdown">
                 {["1", "2", "3", "5"].map((d) => (
                   <button key={d} className={`time-btn ${days === d ? "active" : ""}`} onClick={() => { setDays(d); setMenuOpen(false); }}>{d}H</button>
@@ -264,18 +314,16 @@ export default function App() {
             </div>
           )}
 
-          {/* FLOATING FOOTER (Status) */}
           {!selected && !envInfo && (
             <div className="floating-footer">
-              {loading ? <span className="muted">Memuat data...</span> : fires.length === 0 ? (
+              {loading ? <span className="muted">Memuat data...</span> : filteredFires.length === 0 ? (
                 <span className="muted">Tidak ada anomali api</span>
               ) : (
-                <><span className="dot" /><span>{fires.length.toLocaleString('id-ID')} Titik</span>{stats && <span className="divider">|</span>}{stats && <span className="suhu">{stats.avg} K</span>}</>
+                <><span className="dot" /><span>{filteredFires.length.toLocaleString('id-ID')} Titik</span>{stats && <span className="divider">|</span>}{stats && <span className="suhu">{stats.avg} K</span>}</>
               )}
             </div>
           )}
 
-          {/* PANEL LINGKUNGAN */}
           {envInfo && (
             <div className="floating-panel">
               <div className="panel-head">
@@ -289,15 +337,24 @@ export default function App() {
           )}
 
           {/* PANEL DETAIL API */}
-          {selected !== null && fires[selected] && (
+          {selected && (
             <div className="floating-panel">
               <div className="panel-head">
                 <span className="panel-title">Detail Anomali Api</span>
                 <button className="close" onClick={() => setSelected(null)}><IconClose size={16} /></button>
               </div>
-              <div className="row"><IconTarget /><span className="label">Koordinat</span><span className="value">{fires[selected].lat.toFixed(3)}, {fires[selected].lon.toFixed(3)}</span></div>
-              <div className="row"><IconThermo /><span className="label">Suhu</span><span className="value">{fires[selected].brightness} K</span></div>
-              <div className="row"><IconClock /><span className="label">Waktu</span><span className="value">{fires[selected].date} · {String(fires[selected].time).padStart(4, "0").slice(0, 2)}:{String(fires[selected].time).padStart(4, "0").slice(2)}</span></div>
+              <div className="row"><IconTarget /><span className="label">Koordinat</span><span className="value">{selected.lat.toFixed(3)}, {selected.lon.toFixed(3)}</span></div>
+              <div className="row"><IconThermo /><span className="label">Suhu</span><span className="value">{selected.brightness} K</span></div>
+              <div className="row"><IconClock /><span className="label">Waktu</span><span className="value">{selected.date} · {String(selected.time).padStart(4, "0").slice(0, 2)}:{String(selected.time).padStart(4, "0").slice(2)}</span></div>
+              <div className="row"><IconWind /><span className="label">Arah Angin</span><span className="value">{selected.confidence === 'high' ? 'Asap menyebar cepat' : 'Terdeteksi'}</span></div>
+              <div className="row"><IconChart /><span className="label">Keyakinan</span><span className="value" style={{textTransform:'capitalize'}}>{selected.confidence || 'Nominal'}</span></div>
+            </div>
+          )}
+
+          {/* TAMPILKAN GRAFIK KALAU LAGI NGGAK KLIK APA-APA */}
+          {!selected && !envInfo && chartData.length > 0 && (
+            <div className="floating-panel" style={{ bottom: '70px' }}>
+               <TrendChart data={chartData} />
             </div>
           )}
         </>
