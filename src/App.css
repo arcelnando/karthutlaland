@@ -1,3 +1,6 @@
+/* =========================================
+   GLOBAL & VARIABLES
+========================================= */
 :root {
   --bg: #09090b;
   --surface: rgba(18, 18, 20, 0.85);
@@ -9,72 +12,120 @@
   --border: #27272a;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  -webkit-tap-highlight-color: transparent; 
+}
 
 body {
-  background: var(--bg);
+  background: var(--bg); 
   color: var(--text-main);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased; 
   overscroll-behavior: none;
 }
 
+/* Base Layout: Full Screen, anti-nabrak */
 .app, .landing {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
+  position: relative; 
+  width: 100vw; 
+  height: 100vh; 
+  height: 100dvh; /* Dynamic viewport, aman dari address bar */
+  overflow: hidden; 
   background: var(--bg);
 }
 
-/* --- LANDING PAGE --- */
-.landing { display: flex; justify-content: center; align-items: center; padding: 24px; }
-.landing-content { max-width: 360px; width: 100%; animation: fadeIn 0.6s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.landing h1 { color: #fff; font-size: 36px; font-weight: 700; letter-spacing: -1.5px; margin-bottom: 16px; }
-.landing p { color: var(--text-muted); font-size: 15px; line-height: 1.6; margin-bottom: 40px; letter-spacing: -0.2px; }
-.start-btn {
-  display: flex; align-items: center; justify-content: space-between; width: 100%;
-  background: var(--text-main); color: var(--bg); border: none; padding: 16px 20px;
-  border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.2s;
+/* =========================================
+   LANDING PAGE (CLEAN & SAFE)
+========================================= */
+.landing {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  /* PADDING INI PENTING: Biar ga nabrak nav bar atas/bawah */
+  padding: calc(32px + env(safe-area-inset-top)) 24px calc(32px + env(safe-area-inset-bottom)) 24px;
 }
-.start-btn:active { transform: scale(0.98); }
 
-/* --- MAP --- */
+.landing-content {
+  max-width: 400px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.8s ease-out;
+}
+
+/* Judul Besar, Bersih, Tanpa Emoji */
+.landing h1 {
+  color: #fff;
+  font-size: clamp(32px, 8vw, 42px); /* Responsive font size */
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  margin-bottom: 16px;
+  line-height: 1.1;
+}
+
+/* Deskripsi */
+.landing p {
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  letter-spacing: -0.2px;
+}
+
+/* Tombol Mulai */
+.start-btn {
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  width: 100%;
+  background: var(--text-main); 
+  color: var(--bg); 
+  border: none; 
+  padding: 16px 20px;
+  border-radius: 12px; 
+  font-size: 16px; 
+  font-weight: 600; 
+  cursor: pointer; 
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.start-btn:active { 
+  transform: scale(0.97); 
+  opacity: 0.8; 
+}
+
+@keyframes fadeIn { 
+  from { opacity: 0; transform: translateY(15px); } 
+  to { opacity: 1; transform: translateY(0); } 
+}
+
+/* =========================================
+   MAP & CUSTOM MARKER
+========================================= */
 .map { width: 100%; height: 100%; background: var(--bg); z-index: 1; }
 .leaflet-container { background: var(--bg); }
 .leaflet-control-attribution { display: none; }
 
-/* --- CUSTOM FIRE MARKER --- */
 .custom-fire-icon { background: transparent; border: none; }
 .custom-fire-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(0,0,0,0.8)); }
 
-/* --- FIX CLUSTER JADI BULAT & RAPI --- */
-.marker-cluster-small, 
-.marker-cluster-medium, 
-.marker-cluster-large {
-  background-color: transparent !important;
-  border: none !important;
+/* Cluster Bulat & Elegan */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: transparent !important; border: none !important; }
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+  background-color: var(--surface-solid) !important; color: var(--text-main) !important;
+  border-radius: 50% !important; border: 1px solid var(--accent) !important;
+  font-family: inherit !important; font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; margin: 0 !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
 }
 
-.marker-cluster-small div, 
-.marker-cluster-medium div, 
-.marker-cluster-large div {
-  background-color: var(--surface-solid) !important; 
-  color: var(--text-main) !important;
-  border-radius: 50% !important; /* Bikin jadi bulat sempurna */
-  border: 1px solid var(--accent) !important;
-  font-family: inherit !important; 
-  font-weight: 600 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
-  margin: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* --- FLOATING HEADER & UI --- */
+/* =========================================
+   FLOATING UI (HEADER, FILTER, DLL)
+========================================= */
 .floating-header {
   position: absolute; top: calc(16px + env(safe-area-inset-top));
   left: 16px; right: 16px; z-index: 1000; pointer-events: none;
@@ -110,19 +161,31 @@ body {
 }
 .time-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+.env-btn {
+  position: absolute; right: 16px; top: calc(70px + env(safe-area-inset-top)); z-index: 1000;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-main);
+  padding: 8px 16px; border-radius: 100px; font-size: 12px; font-weight: 600;
+  cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.env-btn:active { background: var(--surface-solid); transform: scale(0.96); }
+.env-btn svg { color: var(--accent); }
+
 .floating-footer {
   position: absolute; bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; z-index: 1000;
   display: flex; align-items: center; gap: 10px;
   background: var(--surface); border: 1px solid var(--border);
-  padding: 8px 16px; border-radius: 100px;
-  font-size: 13px; font-weight: 600; color: var(--text-main);
+  padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 600; color: var(--text-main);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); pointer-events: none;
 }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .divider { color: var(--border); font-weight: 400; }
 .muted { color: var(--text-muted); font-weight: 400; }
 
-/* --- FLOATING PANEL --- */
+/* =========================================
+   FLOATING PANEL
+========================================= */
 .floating-panel {
   position: absolute; bottom: calc(16px + env(safe-area-inset-bottom));
   left: 16px; right: 16px; z-index: 1000;
@@ -130,8 +193,7 @@ body {
   border-radius: 20px; padding: 20px;
   display: flex; flex-direction: column; gap: 16px;
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .panel-head { display: flex; align-items: center; justify-content: space-between; }
@@ -142,7 +204,9 @@ body {
 .row .label { color: var(--text-muted); font-weight: 400; }
 .row .value { margin-left: auto; color: var(--text-main); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-/* --- ZOOM CONTROL --- */
+/* =========================================
+   ZOOM & MISC
+========================================= */
 .zoom {
   position: absolute; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 1000;
   display: flex; flex-direction: column; background: var(--surface); border-radius: 100px;
@@ -152,5 +216,4 @@ body {
 .zoom button:active { background: rgba(255,255,255,0.1); }
 .zoom-sep { height: 1px; background: var(--border); margin: 0 10px; }
 
-/* Sembunyiin teks bawaan leaflet-velocity */
 .leaflet-control-velocity { display: none !important; }

@@ -16,6 +16,7 @@ const IconSearch = ({ size = 18 }) => (<svg width={size} height={size} viewBox="
 const IconArrowRight = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>);
 const IconWind = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" /></svg>);
 const IconAir = ({ size = 14 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>);
+const IconRadar = ({ size = 18 }) => (<svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>);
 
 // --- CUSTOM SVG MARKER ---
 const createFireIcon = () => {
@@ -33,17 +34,11 @@ const WindyLayer = forwardRef((props, ref) => {
       .then((res) => res.json())
       .then((data) => {
         velocityLayer = L.velocityLayer({
-          displayValues: false,
-          data: data,
-          maxVelocity: 10,
-          velocityScale: 0.005,
-          colorScale: ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e"],
-          opacity: 0.8,
+          displayValues: false, data: data, maxVelocity: 10, velocityScale: 0.005,
+          colorScale: ["#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e"], opacity: 0.8,
         });
         map.addLayer(velocityLayer);
-      })
-      .catch((err) => console.error("Gagal load angin:", err));
-
+      }).catch((err) => console.error(err));
     return () => { if (velocityLayer) map.removeLayer(velocityLayer); };
   }, [map]);
   return null;
@@ -66,13 +61,28 @@ function MapController({ center }) {
   return null;
 }
 
+// Komponen buat dapetin titik tengah peta
+function MapCenterTracker({ onChange }) {
+  const map = useMap();
+  useEffect(() => {
+    const handleMove = () => {
+      const c = map.getCenter();
+      onChange([c.lat, c.lng]);
+    };
+    map.on('moveend', handleMove);
+    return () => map.off('moveend', handleMove);
+  }, [map, onChange]);
+  return null;
+}
+
 export default function App() {
   const [isStarted, setIsStarted] = useState(false);
   const [fires, setFires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [envInfo, setEnvInfo] = useState(null);
-  const [debugError, setDebugError] = useState(null); // STATE BUAT DEBUG
+  const [envLoading, setEnvLoading] = useState(false);
+  const [currentCenter, setCurrentCenter] = useState([-2, 118]);
   
   const [isSearching, setIsSearching] = useState(false);
   const [search, setSearch] = useState("");
@@ -82,6 +92,58 @@ export default function App() {
   
   const searchInputRef = useRef(null);
   const cartoKey = import.meta.env.VITE_CARTO_KEY;
+
+  // Fungsi narik cuaca & polusi
+  const fetchEnvironment = async (lat, lng) => {
+    setEnvLoading(true);
+    setEnvInfo(null);
+    setSelected(null);
+    try {
+      const [weatherRes, airRes] = await Promise.all([
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m`),
+        fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&current=pm2_5`)
+      ]);
+      const weatherData = await weatherRes.json();
+      const airData = await airRes.json();
+
+      const getWeatherDesc = (code) => {
+        if (code === 0) return "Cerah";
+        if (code <= 3) return "Berawan";
+        if (code <= 48) return "Berkabut";
+        if (code <= 67) return "Hujan";
+        if (code <= 77) return "Salju";
+        if (code <= 82) return "Hujan Lebat";
+        return "Badai";
+      };
+      const getAqiStatus = (pm) => {
+        if (pm <= 12) return { label: "Baik", color: "#22c55e" };
+        if (pm <= 35.4) return { label: "Sedang", color: "#eab308" };
+        if (pm <= 55.4) return { label: "Tidak Sehat", color: "#f97316" };
+        return { label: "Berbahaya", color: "#ef4444" };
+      };
+
+      const pm25 = airData.current?.pm2_5 || 0;
+      const aqi = getAqiStatus(pm25);
+
+      setEnvInfo({
+        lat: lat.toFixed(3), lng: lng.toFixed(3),
+        speed: weatherData.current.wind_speed_10m, direction: weatherData.current.wind_direction_10m,
+        temp: weatherData.current.temperature_2m, weather: getWeatherDesc(weatherData.current.weather_code),
+        pm25: pm25, aqiLabel: aqi.label, aqiColor: aqi.color
+      });
+    } catch (err) {
+      alert("Gagal memuat data cuaca. Cek koneksi internet.");
+    } finally {
+      setEnvLoading(false);
+    }
+  };
+
+  // Otomatis tarik cuaca pas aplikasi pertama kali dibuka
+  useEffect(() => {
+    if (isStarted && !envInfo) {
+      fetchEnvironment(-2, 118); // Titik tengah Indonesia
+    }
+  }, [isStarted]);
 
   useEffect(() => {
     setLoading(true);
@@ -125,61 +187,6 @@ export default function App() {
     finally { setSearchLoading(false); }
   };
 
-  const handleMapClick = async (e) => {
-    const { lat, lng } = e.latlng;
-    setSelected(null);
-    setEnvInfo(null); 
-    setDebugError(null); 
-
-    try {
-      const [weatherRes, airRes] = await Promise.all([
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m`),
-        fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&current=pm2_5`)
-      ]);
-
-      if (!weatherRes.ok || !airRes.ok) {
-        throw new Error(`API Error. Cuaca: ${weatherRes.status}, Udara: ${airRes.status}`);
-      }
-
-      const weatherData = await weatherRes.json();
-      const airData = await airRes.json();
-
-      const getWeatherDesc = (code) => {
-        if (code === 0) return "Cerah";
-        if (code <= 3) return "Berawan";
-        if (code <= 48) return "Berkabut";
-        if (code <= 67) return "Hujan";
-        if (code <= 77) return "Salju";
-        if (code <= 82) return "Hujan Lebat";
-        return "Badai";
-      };
-
-      const getAqiStatus = (pm) => {
-        if (pm <= 12) return { label: "Baik", color: "#22c55e" };
-        if (pm <= 35.4) return { label: "Sedang", color: "#eab308" };
-        if (pm <= 55.4) return { label: "Tidak Sehat", color: "#f97316" };
-        return { label: "Berbahaya", color: "#ef4444" };
-      };
-
-      const pm25 = airData.current?.pm2_5 || 0;
-      const aqi = getAqiStatus(pm25);
-
-      setEnvInfo({
-        lat: lat.toFixed(3),
-        lng: lng.toFixed(3),
-        speed: weatherData.current.wind_speed_10m,
-        direction: weatherData.current.wind_direction_10m,
-        temp: weatherData.current.temperature_2m,
-        weather: getWeatherDesc(weatherData.current.weather_code),
-        pm25: pm25,
-        aqiLabel: aqi.label,
-        aqiColor: aqi.color
-      });
-    } catch (err) {
-      setDebugError(err.message); // TANGKEP ERROR BUAT DITAMPILIN
-    }
-  };
-
   const stats = useMemo(() => {
     if (!fires.length) return null;
     const avg = fires.reduce((s, f) => s + (parseFloat(f.brightness) || 0), 0) / fires.length;
@@ -200,9 +207,10 @@ export default function App() {
 
   return (
     <div className="app">
-      <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false} eventHandlers={{ click: handleMapClick }}>
+      <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
         <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
         <MapController center={mapCenter} />
+        <MapCenterTracker onChange={setCurrentCenter} />
         
         <WindyLayer />
         
@@ -214,13 +222,6 @@ export default function App() {
         
         <ZoomControl />
       </MapContainer>
-
-      {/* KOTAK DEBUG (Muncul kalau API error) */}
-      {debugError && (
-        <div style={{ position: 'absolute', top: 100, left: 16, right: 16, zIndex: 2000, background: '#300', color: '#ff8888', padding: '12px', fontSize: '12px', borderRadius: '8px', border: '1px solid #f00' }}>
-          <b>Error:</b> {debugError}
-        </div>
-      )}
 
       {/* FLOATING HEADER */}
       <div className="floating-header">
@@ -244,6 +245,16 @@ export default function App() {
           <button key={d} className={`time-btn ${days === d ? "active" : ""}`} onClick={() => setDays(d)}>{d}H</button>
         ))}
       </div>
+
+      {/* TOMBOL CEK LINGKUNGAN (Kanan Bawah) */}
+      <button 
+        className="env-btn" 
+        onClick={() => fetchEnvironment(currentCenter[0], currentCenter[1])}
+        disabled={envLoading}
+      >
+        <IconRadar />
+        <span>{envLoading ? "Memuat..." : "Cek Lingkungan"}</span>
+      </button>
 
       {/* FLOATING FOOTER */}
       {!selected && !envInfo && (
