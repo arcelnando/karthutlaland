@@ -3,13 +3,11 @@
 ========================================= */
 :root {
   --bg: #09090b;
-  --surface: rgba(18, 18, 20, 0.85);
-  --surface-solid: #121214;
+  --surface: #121214; /* Solid dark, tanpa transparansi kaca */
   --text-main: #ededed;
   --text-muted: #a1a1aa;
   --text-dim: #52525b;
   --accent: #ef4444;
-  --border: #27272a;
 }
 
 * { 
@@ -27,29 +25,65 @@ body {
   overscroll-behavior: none;
 }
 
-/* Base Layout: Full Screen, anti-nabrak */
 .app, .landing {
   position: relative; 
   width: 100vw; 
   height: 100vh; 
-  height: 100dvh; /* Dynamic viewport, aman dari address bar */
+  height: 100dvh;
   overflow: hidden; 
   background: var(--bg);
 }
 
 /* =========================================
-   LANDING PAGE (CLEAN & SAFE)
+   LANDING PAGE (DENGAN VISUAL RADAR)
 ========================================= */
 .landing {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* PADDING INI PENTING: Biar ga nabrak nav bar atas/bawah */
   padding: calc(32px + env(safe-area-inset-top)) 24px calc(32px + env(safe-area-inset-bottom)) 24px;
 }
 
+/* Visual Radar di Background */
+.landing-visual {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200vw;
+  height: 200vw;
+  max-width: 800px;
+  max-height: 800px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.15;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.radar-circle {
+  position: absolute;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  animation: pulseRadar 4s linear infinite;
+}
+
+.radar-circle:nth-child(1) { width: 100%; height: 100%; animation-delay: 0s; }
+.radar-circle:nth-child(2) { width: 75%; height: 75%; animation-delay: 1s; }
+.radar-circle:nth-child(3) { width: 50%; height: 50%; animation-delay: 2s; }
+.radar-circle:nth-child(4) { width: 25%; height: 25%; animation-delay: 3s; border-color: #fff; }
+
+@keyframes pulseRadar {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
 .landing-content {
+  position: relative;
+  z-index: 1;
   max-width: 400px;
   width: 100%;
   display: flex;
@@ -57,17 +91,15 @@ body {
   animation: fadeIn 0.8s ease-out;
 }
 
-/* Judul Besar, Bersih, Tanpa Emoji */
 .landing h1 {
   color: #fff;
-  font-size: clamp(32px, 8vw, 42px); /* Responsive font size */
+  font-size: clamp(36px, 8vw, 48px);
   font-weight: 700;
-  letter-spacing: -1.5px;
+  letter-spacing: -2px;
   margin-bottom: 16px;
   line-height: 1.1;
 }
 
-/* Deskripsi */
 .landing p {
   color: var(--text-muted);
   font-size: 15px;
@@ -76,7 +108,6 @@ body {
   letter-spacing: -0.2px;
 }
 
-/* Tombol Mulai */
 .start-btn {
   display: flex; 
   align-items: center; 
@@ -86,17 +117,14 @@ body {
   color: var(--bg); 
   border: none; 
   padding: 16px 20px;
-  border-radius: 12px; 
+  border-radius: 8px; /* Sudut lebih tegas, bukan bubble */
   font-size: 16px; 
   font-weight: 600; 
   cursor: pointer; 
   transition: transform 0.2s, opacity 0.2s;
 }
 
-.start-btn:active { 
-  transform: scale(0.97); 
-  opacity: 0.8; 
-}
+.start-btn:active { transform: scale(0.97); opacity: 0.8; }
 
 @keyframes fadeIn { 
   from { opacity: 0; transform: translateY(15px); } 
@@ -113,18 +141,19 @@ body {
 .custom-fire-icon { background: transparent; border: none; }
 .custom-fire-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(0,0,0,0.8)); }
 
-/* Cluster Bulat & Elegan */
+/* Cluster Bulat Tanpa Border Luar */
 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: transparent !important; border: none !important; }
 .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-  background-color: var(--surface-solid) !important; color: var(--text-main) !important;
-  border-radius: 50% !important; border: 1px solid var(--accent) !important;
+  background-color: var(--surface) !important; color: var(--text-main) !important;
+  border-radius: 50% !important; border: 1px solid var(--accent) !important; /* Tetep ada border merah tipis buat penanda api */
   font-family: inherit !important; font-weight: 600 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; margin: 0 !important;
+  box-shadow: none !important; /* Hilangkan shadow */
+  margin: 0 !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
 }
 
 /* =========================================
-   FLOATING UI (HEADER, FILTER, DLL)
+   FLOATING UI (TANPA BORDER / GLASS)
 ========================================= */
 .floating-header {
   position: absolute; top: calc(16px + env(safe-area-inset-top));
@@ -132,17 +161,16 @@ body {
 }
 .brand-wrap { display: flex; justify-content: space-between; align-items: center; pointer-events: auto; }
 .brand { color: var(--text-main); font-size: 20px; font-weight: 700; letter-spacing: -0.5px; cursor: pointer; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
+
 .search-btn {
-  background: var(--surface); border: 1px solid var(--border); color: var(--text-main);
+  background: var(--surface); border: none; color: var(--text-main);
   width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
 }
 .search-form {
   display: flex; align-items: center; gap: 10px;
-  background: var(--surface); border: 1px solid var(--border);
+  background: var(--surface); border: none;
   border-radius: 100px; padding: 0 16px; height: 44px;
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  pointer-events: auto; animation: expandSearch 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto; animation: expandSearch 0.3s ease-out;
 }
 @keyframes expandSearch { from { width: 44px; opacity: 0; } to { width: 100%; opacity: 1; } }
 .search-form svg { color: var(--text-muted); }
@@ -155,45 +183,43 @@ body {
   left: 16px; z-index: 1000; display: flex; gap: 6px;
 }
 .time-btn {
-  background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+  background: var(--surface); border: none; color: var(--text-muted);
   padding: 6px 12px; border-radius: 100px; font-size: 12px; font-weight: 600;
-  cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: all 0.2s;
+  cursor: pointer; transition: all 0.2s;
 }
-.time-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.time-btn.active { background: var(--accent); color: #fff; }
 
 .env-btn {
   position: absolute; right: 16px; top: calc(70px + env(safe-area-inset-top)); z-index: 1000;
   display: flex; align-items: center; gap: 8px;
-  background: var(--surface); border: 1px solid var(--border); color: var(--text-main);
+  background: var(--surface); border: none; color: var(--text-main);
   padding: 8px 16px; border-radius: 100px; font-size: 12px; font-weight: 600;
-  cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  cursor: pointer; transition: all 0.2s;
 }
-.env-btn:active { background: var(--surface-solid); transform: scale(0.96); }
+.env-btn:active { transform: scale(0.96); }
 .env-btn svg { color: var(--accent); }
 
 .floating-footer {
   position: absolute; bottom: calc(16px + env(safe-area-inset-bottom)); left: 16px; z-index: 1000;
   display: flex; align-items: center; gap: 10px;
-  background: var(--surface); border: 1px solid var(--border);
+  background: var(--surface); border: none;
   padding: 8px 16px; border-radius: 100px; font-size: 13px; font-weight: 600; color: var(--text-main);
-  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); pointer-events: none;
+  pointer-events: none;
 }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-.divider { color: var(--border); font-weight: 400; }
+.divider { color: var(--text-dim); font-weight: 400; }
 .muted { color: var(--text-muted); font-weight: 400; }
 
 /* =========================================
-   FLOATING PANEL
+   FLOATING PANEL (TANPA BINGKAI)
 ========================================= */
 .floating-panel {
   position: absolute; bottom: calc(16px + env(safe-area-inset-bottom));
   left: 16px; right: 16px; z-index: 1000;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; padding: 20px;
+  background: var(--surface); border: none;
+  border-radius: 12px; padding: 20px;
   display: flex; flex-direction: column; gap: 16px;
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.8); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .panel-head { display: flex; align-items: center; justify-content: space-between; }
@@ -205,15 +231,15 @@ body {
 .row .value { margin-left: auto; color: var(--text-main); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* =========================================
-   ZOOM & MISC
+   ZOOM CONTROL (TANPA BORDER)
 ========================================= */
 .zoom {
   position: absolute; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 1000;
   display: flex; flex-direction: column; background: var(--surface); border-radius: 100px;
-  border: 1px solid var(--border); overflow: hidden; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: none; overflow: hidden;
 }
 .zoom button { width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: none; color: var(--text-main); cursor: pointer; }
 .zoom button:active { background: rgba(255,255,255,0.1); }
-.zoom-sep { height: 1px; background: var(--border); margin: 0 10px; }
+.zoom-sep { height: 1px; background: var(--text-dim); margin: 0 10px; opacity: 0.5; }
 
 .leaflet-control-velocity { display: none !important; }
