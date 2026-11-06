@@ -49,14 +49,6 @@ export function AboutPanel({ onClose }) {
         ]} />
         <p className="note">Rincian sumber, timestamp, resolusi, dan keterbatasan tiap modul ada pada panel Sumber & status data.</p>
       </section>
-      <section><h3>Technical Information</h3>
-        <List items={[
-          "Antarmuka: React dan Vite. Peta: Leaflet, react-leaflet, react-leaflet-cluster, leaflet-velocity.",
-          "Hotspot diterima dari endpoint proyek /api/hotspots; layer tematik dikonfigurasi lewat environment variable VITE_*.",
-          "Dideploy sebagai aplikasi web statis dengan fungsi serverless di Vercel.",
-          "Tile diminta hanya sampai zoom asli penyedia; di atasnya tile diperbesar.",
-        ]} />
-      </section>
       <section><h3>Data Limitations</h3>
         <List items={[
           "Hotspot adalah anomali termal, bukan kebakaran terkonfirmasi.",
