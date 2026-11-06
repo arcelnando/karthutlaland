@@ -25,8 +25,27 @@ body {
 .leaflet-container { background: var(--bg); }
 .leaflet-control-attribution { display: none; }
 
+/* Ikon Api Baru */
 .custom-fire-icon { background: transparent; border: none; }
-.custom-fire-icon svg { width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(0,0,0,0.8)); }
+.fire-marker-wrapper {
+  position: relative; width: 100%; height: 100%;
+  display: flex; justify-content: center; align-items: center;
+}
+.fire-halo {
+  position: absolute; width: 30px; height: 30px;
+  background: rgba(239, 68, 68, 0.3);
+  border-radius: 50%;
+  animation: pulseHalo 2s infinite;
+}
+@keyframes pulseHalo {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+.fire-svg {
+  position: relative; z-index: 2;
+  width: 20px; height: 20px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
 
 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: transparent !important; border: none !important; }
 .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
@@ -37,48 +56,13 @@ body {
   display: flex !important; align-items: center !important; justify-content: center !important;
 }
 
-/* ==========================================
-   EFEK BUMI 3D (CSS SPHERE)
-========================================= */
-.earth-sphere {
-  width: 100%; height: 100%;
-  border-radius: 50%;
-  background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/World_map_-_low_resolution.svg/1024px-World_map_-_low_resolution.svg.png');
-  background-size: cover;
-  background-position: center;
-  box-shadow: 
-    inset -40px -40px 80px rgba(0,0,0,0.9), 
-    inset 10px 10px 40px rgba(255,255,255,0.2),
-    0 0 50px rgba(239, 68, 68, 0.2);
-  animation: rotateEarth 30s linear infinite;
-}
-
-@keyframes rotateEarth {
-  0% { background-position: 0% center; }
-  100% { background-position: 200% center; }
-}
-
-/* --- LANDING OVERLAY --- */
+/* --- LANDING OVERLAY (CITRA SATELIT) --- */
 .landing-overlay {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 2000; background: #000;
+  z-index: 2000; 
+  background: rgba(0, 0, 0, 0.5); /* Overlay gelap biar teks kebaca, tapi citra satelit tetep kelihatan */
   display: flex; flex-direction: column; justify-content: center; align-items: center;
   overflow: hidden;
-}
-
-.earth-bg {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120vw; height: 120vw;
-  max-width: 1000px; max-height: 1000px;
-  z-index: 0; opacity: 0.3;
-  animation: floatEarth 6s ease-in-out infinite;
-}
-
-@keyframes floatEarth {
-  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-  50% { transform: translate(-50%, -50%) translateY(-20px); }
 }
 
 .landing-content {
@@ -96,7 +80,7 @@ body {
   text-shadow: 0 4px 20px rgba(0,0,0,0.8);
 }
 .landing-content p {
-  color: var(--text-muted); font-size: 15px; line-height: 1.6;
+  color: var(--text-main); font-size: 15px; line-height: 1.6;
   margin-bottom: 40px; letter-spacing: -0.2px;
   text-shadow: 0 2px 10px rgba(0,0,0,0.8);
 }
@@ -108,9 +92,7 @@ body {
 }
 .start-btn:active { transform: scale(0.97); }
 
-/* ==========================================
-   LOADING SCREEN (SPINNER BIASA)
-========================================= */
+/* --- LOADING SCREEN --- */
 .loading-screen {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   z-index: 3000; background: #050505;
@@ -129,9 +111,7 @@ body {
   color: var(--text-muted); font-size: 13px; font-weight: 500; letter-spacing: 1px;
 }
 
-/* ==========================================
-   UI UTAMA (HANYA TITIK TIGA)
-========================================= */
+/* --- FLOATING UI --- */
 .floating-header {
   position: absolute; top: calc(16px + env(safe-area-inset-top));
   right: 16px; z-index: 1000;
