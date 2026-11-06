@@ -102,19 +102,25 @@ const TrendChart = ({ data }) => {
   );
 };
 
-// --- LOADING SCREEN SATELIT ---
+// --- LOADING SCREEN ALA NASA (LOCK ON TARGET) ---
 const LoadingScreen = () => (
   <div className="loading-screen">
-    <div className="satellite-container">
-      <div className="satellite-body">
-        <div className="satellite-panel left"></div>
-        <div className="satellite-core"></div>
-        <div className="satellite-panel right"></div>
+    <div className="nasa-ui">
+      <div className="nasa-grid"></div>
+      <div className="nasa-target">
+        <div className="nasa-crosshair"></div>
+        <div className="nasa-reticle">
+          <span className="corner tl"></span>
+          <span className="corner tr"></span>
+          <span className="corner bl"></span>
+          <span className="corner br"></span>
+        </div>
       </div>
-      <div className="radar-beam"></div>
+      <div className="nasa-text">
+        <p>SAT-LINK ESTABLISHED</p>
+        <p className="nasa-sub">Locking Target Coordinates...</p>
+      </div>
     </div>
-    <div className="loading-earth-half"></div>
-    <p>Mengkalibrasi Orbit...</p>
   </div>
 );
 
@@ -150,7 +156,7 @@ export default function App() {
 
   const handleStart = () => {
     setIsLoadingMap(true);
-    setTimeout(() => { setIsStarted(true); setIsLoadingMap(false); }, 3000);
+    setTimeout(() => { setIsStarted(true); setIsLoadingMap(false); }, 3500); 
   };
 
   const handleLocate = () => {
@@ -208,7 +214,7 @@ export default function App() {
       const data = await res.json();
       const windDir = data.current.wind_direction_10m;
 
-      const distance = 0.45; // ~50km
+      const distance = 0.45;
       const rad = (windDir * Math.PI) / 180;
       const newLat = fire.lat + (distance * Math.cos(rad));
       const newLon = fire.lon + (distance * Math.sin(rad));
@@ -275,55 +281,56 @@ export default function App() {
 
   return (
     <div className="app">
-      <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
-        <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
-        
-        {/* Layer Deforestasi yang lebih jelas */}
-        {showForest && isStarted && (
-          <TileLayer url="https://tiles.globalforestwatch.org/tree_cover_loss/v1.11/default/{z}/{x}/{y}.png" opacity={0.7} />
-        )}
+      {/* 3D MAP TILT */}
+      <div className="map-tilt-wrapper">
+        <MapContainer center={[-2, 118]} zoom={5} className="map" zoomControl={false} attributionControl={false}>
+          <TileLayer url={`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`} />
+          
+          {showForest && isStarted && (
+            <TileLayer url="https://tiles.globalforestwatch.org/tree_cover_loss/v1.11/default/{z}/{x}/{y}.png" opacity={0.7} />
+          )}
 
-        {showSmokeLayer && isStarted && (
-          <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.5} />
-        )}
+          {showSmokeLayer && isStarted && (
+            <TileLayer url="https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/2023-10-01/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg" opacity={0.5} />
+          )}
 
-        <MapController center={mapCenter} zoom={mapZoom} />
-        <MapCenterTracker onChange={setCurrentCenter} />
-        
-        {isStarted && <WindyLayer />}
-        
-        {isStarted && (
-          <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
-            {filteredFires.map((fire, i) => (
-              <Marker 
-                key={i} 
-                position={[fire.lat, fire.lon]} 
-                icon={createFireIcon(fire.confidence)} 
-                eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); handleFireClick(fire); } }} 
-              />
-            ))}
-          </MarkerClusterGroup>
-        )}
+          <MapController center={mapCenter} zoom={mapZoom} />
+          <MapCenterTracker onChange={setCurrentCenter} />
+          
+          {isStarted && <WindyLayer />}
+          
+          {isStarted && (
+            <MarkerClusterGroup chunkedLoading maxClusterRadius={50}>
+              {filteredFires.map((fire, i) => (
+                <Marker 
+                  key={i} 
+                  position={[fire.lat, fire.lon]} 
+                  icon={createFireIcon(fire.confidence)} 
+                  eventHandlers={{ click: (e) => { L.DomEvent.stopPropagation(e); handleFireClick(fire); } }} 
+                />
+              ))}
+            </MarkerClusterGroup>
+          )}
 
-        {smokeDirection && (
-          <Polyline positions={smokeDirection} pathOptions={{ color: '#ef4444', dashArray: '5, 10', weight: 2, opacity: 0.8 }} />
-        )}
-        
-        {isStarted && <ZoomControl />}
-      </MapContainer>
+          {smokeDirection && (
+            <Polyline positions={smokeDirection} pathOptions={{ color: '#ef4444', dashArray: '5, 10', weight: 2, opacity: 0.8 }} />
+          )}
+          
+          {isStarted && <ZoomControl />}
+        </MapContainer>
+      </div>
 
       {isLoadingMap && <LoadingScreen />}
 
       {!isStarted && !isLoadingMap && (
         <div className="landing-overlay">
-          <div className="landing-earth-bg">
-             <div className="earth-half-sphere"></div>
-             <div className="scanline"></div>
+          <div className="galaxy-bg">
+            <div className="stars-layer-1"></div>
+            <div className="stars-layer-2"></div>
+            <div className="stars-layer-3"></div>
           </div>
           <div className="landing-content">
-            <div className="typing-container">
-              <h1 className="typing-title">Karthutlaland</h1>
-            </div>
+            <h1>Karthutlaland</h1>
             <p>Sistem pemantauan anomali api dan deforestasi Indonesia berbasis intelijen citra satelit.</p>
             <button className="start-btn" onClick={handleStart}>Mulai Pantau <IconSearch /></button>
           </div>
