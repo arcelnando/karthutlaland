@@ -48,7 +48,7 @@ export default function App() {
   useEffect(() => {
     // BYPASS CACHE TOTAL: pakai timestamp dan header no-cache
     const timestamp = new Date().getTime();
-    fetch(`/api/fires?t=${timestamp}`, {
+    fetch(`/api/hotspots?t=${timestamp}`, {
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
     })
       .then(async (res) => {
