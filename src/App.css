@@ -8,234 +8,215 @@
   --text-main: #ededed;
   --text-muted: #a1a1aa;
   --text-dim: #52525b;
-  --accent: #ef4444; /* Merah bata, bukan merah nyala */
+  --accent: #ef4444;
   --accent-glow: rgba(239, 68, 68, 0.15);
   --border: #27272a;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  -webkit-tap-highlight-color: transparent;
+}
 
 body {
   background: var(--bg);
   color: var(--text-main);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
 }
 
 .app, .landing {
-  position: relative;
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
+  background: var(--bg);
 }
 
 /* =========================================
-   LANDING PAGE
+   LANDING PAGE (Ultra Clean)
 ========================================= */
-.landing {
-  justify-content: center;
-  align-items: center;
-  padding: 24px;
+.landing { 
+  justify-content: center; 
+  align-items: center; 
+  padding: 24px; 
 }
-
-.landing-content {
-  max-width: 380px;
-  width: 100%;
-  animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+.landing-content { 
+  max-width: 360px; 
+  width: 100%; 
+  animation: fadeIn 0.6s ease-out; 
 }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.landing-icon {
-  color: var(--accent);
-  margin-bottom: 32px;
+.landing h1 { 
+  color: #fff; 
+  font-size: 36px; 
+  font-weight: 700; 
+  letter-spacing: -1.5px; 
+  margin-bottom: 16px; 
 }
-
-.landing h1 {
-  color: #fff;
-  font-size: 32px;
-  font-weight: 600;
-  letter-spacing: -1px;
-  margin-bottom: 12px;
-}
-
-.landing p {
-  color: var(--text-muted);
-  font-size: 15px;
-  line-height: 1.6;
-  margin-bottom: 40px;
+.landing p { 
+  color: var(--text-muted); 
+  font-size: 15px; 
+  line-height: 1.6; 
+  margin-bottom: 40px; 
   letter-spacing: -0.2px;
 }
-
 .start-btn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
   width: 100%;
-  background: var(--text-main);
-  color: var(--bg);
-  border: none;
+  background: var(--text-main); 
+  color: var(--bg); 
+  border: none; 
   padding: 16px 20px;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
+  border-radius: 12px; 
+  font-size: 15px; 
+  font-weight: 600; 
+  cursor: pointer; 
   transition: transform 0.2s, opacity 0.2s;
 }
 .start-btn:active { transform: scale(0.98); opacity: 0.8; }
 
 /* =========================================
-   HEADER & UI ATAS
+   HEADER (Judul & Search Kiri-Kanan)
 ========================================= */
-.top-ui {
-  position: absolute;
-  top: 16px; left: 16px; right: 16px;
-  z-index: 1000;
+.header {
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  pointer-events: none;
+  padding: calc(16px + env(safe-area-inset-top)) 16px 16px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
 }
 
-.brand {
-  display: flex; align-items: center; gap: 8px;
-  color: var(--text-main); font-size: 15px; font-weight: 600;
-  pointer-events: auto;
-  background: var(--surface);
-  padding: 8px 14px;
-  border-radius: 100px;
-  border: 1px solid var(--border);
+.brand { 
+  color: var(--text-main); 
+  font-size: 18px; 
+  font-weight: 700; 
+  letter-spacing: -0.5px;
   cursor: pointer;
-  transition: background 0.2s;
 }
-.brand:active { background: var(--surface-hover); }
-.brand svg { color: var(--accent); }
-
-.search-wrapper { pointer-events: auto; }
 
 .icon-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: transparent; 
+  border: none; 
   color: var(--text-main);
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  display: grid; place-items: center;
+  width: 36px; height: 36px; 
+  display: grid; place-items: center; 
   cursor: pointer;
-  transition: background 0.2s;
+  transition: opacity 0.2s;
 }
-.icon-btn:active { background: var(--surface-hover); }
+.icon-btn:active { opacity: 0.6; }
 
 .search-form {
-  display: flex; align-items: center;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 0 6px 0 16px;
-  height: 40px;
-  width: 220px;
-  animation: expandSearch 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex; 
+  align-items: center; 
+  gap: 10px;
+  width: 100%;
 }
-@keyframes expandSearch { from { width: 40px; opacity: 0; } to { width: 220px; opacity: 1; } }
-
-.search-form input {
-  background: transparent; border: none; color: var(--text-main);
-  font-size: 14px; outline: none; flex: 1;
+.search-form svg { color: var(--text-muted); }
+.search-form input { 
+  background: transparent; 
+  border: none; 
+  color: var(--text-main); 
+  font-size: 15px; 
+  outline: none; 
+  flex: 1; 
 }
 .search-form input::placeholder { color: var(--text-dim); }
-.close-search { background: transparent; border: none; width: 28px; height: 28px; }
-
-/* Status Bar - Dibikin Melayang di Kiri Bawah Header */
-.status-bar {
-  position: absolute;
-  top: 72px; left: 16px;
-  z-index: 1000;
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 500;
-  color: var(--text-main);
-  background: var(--surface);
-  padding: 6px 12px;
-  border-radius: 100px;
-  border: 1px solid var(--border);
-  pointer-events: none;
+.icon-btn-close { 
+  background: transparent; 
+  border: none; 
+  color: var(--text-muted); 
+  cursor: pointer;
+  padding: 4px;
 }
-.dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
-}
+.loader { font-size: 12px; color: var(--text-muted); }
 
 /* =========================================
-   MAP & CLUSTER
+   MAP AREA
 ========================================= */
-.map { flex: 1; width: 100%; background: var(--bg); z-index: 1; }
+.map-container {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  background: var(--bg);
+}
+
+.map { width: 100%; height: 100%; background: var(--bg); z-index: 1; }
 .leaflet-container { background: var(--bg); }
 .leaflet-control-attribution { display: none; }
 
-/* Cluster Minimalis */
-.custom-marker-cluster {
-  background: transparent;
-}
-.custom-marker-cluster span {
-  background: var(--surface);
-  color: var(--text-main);
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 600;
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+/* =========================================
+   FOOTER (Status Titik Api)
+========================================= */
+.footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px calc(16px + env(safe-area-inset-bottom)) 16px 16px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  z-index: 1000;
 }
 
-/* Zoom Control */
+.status {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;
+}
+.dot { 
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent); 
+  box-shadow: 0 0 0 3px var(--accent-glow); 
+}
+.muted { color: var(--text-muted); }
+
+.stat-suhu {
+  display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500;
+}
+
+/* =========================================
+   FLOATING CONTROLS (Zoom & Panel)
+========================================= */
 .zoom {
-  position: absolute; right: 16px; bottom: 32px; z-index: 1000;
-  display: flex; flex-direction: column;
-  background: var(--surface);
-  border-radius: 100px;
-  border: 1px solid var(--border);
-  overflow: hidden;
+  position: absolute; right: 16px; bottom: 24px; z-index: 1000;
+  display: flex; flex-direction: column; background: var(--surface); border-radius: 100px;
+  border: 1px solid var(--border); overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
 }
-.zoom button {
-  width: 40px; height: 40px; display: grid; place-items: center;
-  background: transparent; border: none; color: var(--text-main);
-  cursor: pointer;
-}
+.zoom button { width: 40px; height: 40px; display: grid; place-items: center; background: transparent; border: none; color: var(--text-main); cursor: pointer; }
 .zoom button:active { background: var(--surface-hover); }
 .zoom-sep { height: 1px; background: var(--border); margin: 0 10px; }
 
-/* =========================================
-   PANEL INFO (BOTTOM SHEET STYLE)
-========================================= */
 .panel {
-  position: absolute; left: 16px; right: 16px; bottom: 32px; z-index: 1000;
+  position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 1000;
   background: var(--surface); border-radius: 20px; padding: 20px;
   display: flex; flex-direction: column; gap: 16px;
-  border: 1px solid var(--border);
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0,0,0,0.8);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 .panel-head { display: flex; align-items: center; justify-content: space-between; }
-.panel-title {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 15px; font-weight: 600; color: var(--text-main);
-}
-.panel-title svg { color: var(--accent); }
+.panel-title { font-size: 14px; font-weight: 600; color: var(--text-main); }
 .close { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
-
 .row { display: flex; align-items: center; gap: 12px; font-size: 14px; }
 .row svg { color: var(--text-dim); flex-shrink: 0; }
 .row .label { color: var(--text-muted); font-weight: 400; }
 .row .value { margin-left: auto; color: var(--text-main); font-weight: 500; font-variant-numeric: tabular-nums; }
 
-/* Footer Bawah (Suhu Rata-rata) */
-.foot {
-  position: absolute; left: 16px; bottom: 32px; z-index: 1000;
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 500; color: var(--text-main);
-  background: var(--surface);
-  padding: 8px 16px; border-radius: 100px;
-  border: 1px solid var(--border);
-  pointer-events: none;
+/* =========================================
+   CLUSTER & MARKER STYLING
+========================================= */
+.leaflet-marker-icon { filter: hue-rotate(140deg) saturate(3) brightness(0.8); }
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: rgba(239, 68, 68, 0.2) !important; }
+.marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+  background-color: #121214 !important; color: #ededed !important;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif !important; font-weight: 600 !important; border: 1px solid #27272a !important;
 }
-.foot .muted { color: var(--text-muted); }
