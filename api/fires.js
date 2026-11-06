@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'; // Paksa Vercel jangan cache API ini
+export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function handler(req, res) {
@@ -14,13 +14,21 @@ export default async function handler(req, res) {
   const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${MAP_KEY}/${SOURCE}/${BBOX}/${DAYS}`;
 
   try {
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`NASA API error: ${response.status}`);
+    // Request ke NASA dengan mode anti-cache
+    const response = await fetch(url, { 
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+    });
     
+    if (!response.ok) throw new Error(`NASA error: ${response.status}`);
     const csv = await response.text();
     
+    // Paksa Vercel dan browser buat nggak nyimpen data ini sama sekali
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Cache-Control", "no-store, max-age=0, must-revalidate"); 
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    
     return res.status(200).send(csv);
   } catch (err) {
     return res.status(500).json({ error: err.message });

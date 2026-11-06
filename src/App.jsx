@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./App.css";
 
+// --- SVG Icons (Custom & Unique) ---
 const IconLogo = ({ size = 24 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2c1.2 3.2 3.6 4.8 3.6 8.2A3.6 3.6 0 0 1 12 13.8a3.6 3.6 0 0 1-3.6-3.6C8.4 6.8 10.8 5.2 12 2Z" /><path d="M12 13.8c-2.4 1.4-3.6 3.4-3.6 5.6A3.6 3.6 0 0 0 12 23a3.6 3.6 0 0 0 3.6-3.6c0-2.2-1.2-4.2-3.6-5.6Z" /><path d="M12 17v3" strokeDasharray="2 2" /></svg>
 );
@@ -35,7 +36,6 @@ export default function App() {
   const [fires, setFires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [debugMsg, setDebugMsg] = useState("");
   const [selected, setSelected] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [search, setSearch] = useState("");
@@ -46,14 +46,16 @@ export default function App() {
   const cartoKey = import.meta.env.VITE_CARTO_KEY;
 
   useEffect(() => {
-    // Tambahin timestamp biar browser wajib ambil data baru (anti cache)
-    fetch(`/api/fires?t=${new Date().getTime()}`)
+    // BYPASS CACHE TOTAL: pakai timestamp dan header no-cache
+    const timestamp = new Date().getTime();
+    fetch(`/api/fires?t=${timestamp}`, {
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+    })
       .then(async (res) => {
         if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
         const text = await res.text();
         if (text.includes('{"error"')) {
-           const parsed = JSON.parse(text);
-           throw new Error(parsed.error);
+           throw new Error(JSON.parse(text).error);
         }
         return text;
       })
@@ -64,6 +66,7 @@ export default function App() {
         
         for (let i = 1; i < lines.length; i++) {
           const cols = lines[i].split(",").map(c => c.trim());
+          // Pastiin barisnya bukan kosong dan punya cukup kolom
           if (cols.length >= 10 && cols[0] !== "" && cols[0] !== "latitude") {
             const lat = parseFloat(cols[0]);
             const lon = parseFloat(cols[1]);
@@ -72,17 +75,11 @@ export default function App() {
             }
           }
         }
-        
-        if (data.length === 0) {
-           setDebugMsg(`API jalan, tapi data terbaca 0. Teks asli: ${cleanCsv.substring(0, 50)}...`);
-        }
-
         setFires(data);
         setLoading(false);
       })
       .catch((err) => { 
         setError("Gagal konek API"); 
-        setDebugMsg(err.message);
         setLoading(false); 
       });
   }, []);
@@ -142,16 +139,9 @@ export default function App() {
 
       {!showSearch && (
         <div className="status-bar">
-          {error ? <span className="error-txt" style={{color: 'red'}}>{error}</span> : loading ? <span className="muted">Memuat satelit...</span> : (
+          {error ? <span className="error-txt" style={{color: '#ff3b30'}}>{error}</span> : loading ? <span className="muted">Memuat satelit...</span> : (
             <><span className="dot" /><span>{fires.length} Titik Aktif</span></>
           )}
-        </div>
-      )}
-
-      {/* KOTAK DEBUG: Muncul kalau data 0 padahal udah loading */}
-      {debugMsg && (
-        <div style={{position: 'absolute', top: 90, left: 16, right: 16, zIndex: 2000, background: '#300', color: '#ff8888', padding: '12px', fontSize: '12px', borderRadius: '8px', border: '1px solid #f00'}}>
-          <b>Info Debug:</b> {debugMsg}
         </div>
       )}
 
